@@ -2,16 +2,25 @@
 
 Next.js frontend application.
 
-Planned features:
+## Modules
+
 - Command Center dashboard
 - Business Brain interface
 - Executive Advisor chat
 - Continuity Vault
 - Legacy Score dashboard
 
-Stack:
+## Stack
+
 - Next.js
 - React
 - TypeScript
 - Tailwind CSS
 - Vercel deployment
+
+## Future Integrations
+
+- Supabase authentication
+- OpenAI agent interface
+- Cloudflare R2 document storage
+- n8n workflow triggers
