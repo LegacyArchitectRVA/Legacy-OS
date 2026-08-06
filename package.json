@@ -1,0 +1,16 @@
+{
+  "name": "legacy-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered business continuity operating system for Order in Your Absence.",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "turbo": "latest",
+    "typescript": "latest"
+  }
+}
