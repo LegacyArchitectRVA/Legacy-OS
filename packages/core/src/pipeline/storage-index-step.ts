@@ -24,6 +24,7 @@ export class StorageIndexStep implements PipelineStep {
         updatedAt: item.updatedAt,
         sourceId: item.sourceId,
         sourcePath: typeof item.metadata.path === 'string' ? item.metadata.path : undefined,
+        contentHash: typeof item.metadata.contentHash === 'string' ? item.metadata.contentHash : undefined,
       });
       this.indexer.add(stored.value);
     }
