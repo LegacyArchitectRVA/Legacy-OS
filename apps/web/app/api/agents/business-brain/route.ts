@@ -7,6 +7,12 @@ export async function POST(request: Request) {
     agent: "Business Brain",
     question,
     context,
+    capabilities: [
+      "SOP retrieval",
+      "process analysis",
+      "template guidance",
+      "operational memory"
+    ],
     response: "Knowledge retrieval layer ready for model connection."
   });
 }
