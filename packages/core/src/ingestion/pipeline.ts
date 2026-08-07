@@ -1,5 +1,5 @@
-import type { IndexedItem } from "../indexing/indexer";
-import { LegacyIndexer } from "../indexing/indexer";
+import type { IndexedItem } from '../indexing/indexer';
+import type { StorageAdapter } from '../persistence/storage';
 
 export type IngestionRecord = {
   id: string;
@@ -12,12 +12,12 @@ export type IngestionRecord = {
 };
 
 export class IngestionPipeline {
-  constructor(private readonly indexer: LegacyIndexer) {}
+  constructor(private readonly storage: StorageAdapter<IndexedItem>) {}
 
   ingest(record: IngestionRecord): IndexedItem {
     const now = new Date().toISOString();
 
-    return this.indexer.add({
+    const item: IndexedItem = {
       id: record.id,
       sourceId: record.sourceId,
       name: record.name,
@@ -25,7 +25,16 @@ export class IngestionPipeline {
       metadata: record.metadata ?? {},
       createdAt: record.createdAt ?? now,
       updatedAt: record.updatedAt ?? now,
+    };
+
+    this.storage.save({
+      id: item.id,
+      value: item,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     });
+
+    return item;
   }
 
   ingestMany(records: IngestionRecord[]): IndexedItem[] {
