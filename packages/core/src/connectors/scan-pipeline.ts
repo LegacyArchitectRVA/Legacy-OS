@@ -1,9 +1,8 @@
 import { LegacyIndexer } from '../indexing/indexer';
-import { MemoryStorage } from '../persistence/storage';
+import { MemoryStorage, type StorageAdapter } from '../persistence/storage';
 import { IntegrationPipeline, type PipelineContext, type PipelineStep } from '../pipeline/integration-pipeline';
 import { StorageIndexStep } from '../pipeline/storage-index-step';
 import type { SourceConnector, SourceScanOptions } from './source';
-import { ConnectorScanIngestor } from './scan-ingest';
 
 export class RecordValidationStep implements PipelineStep {
   readonly name = 'validate-records';
@@ -23,33 +22,59 @@ export class RecordValidationStep implements PipelineStep {
 
 export class ConnectorPipeline {
   private readonly pipeline: IntegrationPipeline;
-  private readonly ingestor: ConnectorScanIngestor;
 
   constructor(
-    storage = new MemoryStorage(),
-    indexer = new LegacyIndexer(),
+    private readonly storage: StorageAdapter = new MemoryStorage(),
+    private readonly indexer = new LegacyIndexer(),
   ) {
     this.pipeline = new IntegrationPipeline([
       new RecordValidationStep(),
-      new StorageIndexStep(storage, indexer),
+      new StorageIndexStep(this.storage, this.indexer),
     ]);
-    this.ingestor = new ConnectorScanIngestor({
-      ingest: (record) => {
+  }
+
+  async scan(connector: SourceConnector, options?: SourceScanOptions) {
+    let discovered = 0;
+    let ingested = 0;
+    const errors: Array<{ itemId: string; message: string }> = [];
+
+    for await (const item of connector.scan(options)) {
+      discovered += 1;
+      try {
+        const now = new Date().toISOString();
         const context: PipelineContext = {
-          sourceId: record.sourceId,
-          records: [record],
+          sourceId: item.sourceId,
+          records: [{
+            id: item.id,
+            sourceId: item.sourceId,
+            name: item.name,
+            type: item.type,
+            metadata: {
+              ...item.metadata,
+              path: item.path,
+              size: item.size,
+              modifiedAt: item.modifiedAt,
+              contentHash: item.contentHash,
+            },
+            createdAt: item.modifiedAt ?? now,
+            updatedAt: item.modifiedAt ?? now,
+          }],
           validated: false,
           indexed: false,
           persisted: false,
         };
-        void this.pipeline.run(context);
-        return record as never;
-      },
-    } as never);
-  }
 
-  async scan(connector: SourceConnector, options?: SourceScanOptions) {
-    return this.ingestor.run(connector, options);
+        await this.pipeline.run(context);
+        ingested += 1;
+      } catch (error) {
+        errors.push({
+          itemId: item.id,
+          message: error instanceof Error ? error.message : 'Unknown pipeline error',
+        });
+      }
+    }
+
+    return { discovered, ingested, errors };
   }
 }
 
