@@ -40,13 +40,13 @@ function scoreMemory(
   ].join(" ").toLowerCase();
 
   const matched = terms.filter((term) => haystack.includes(term));
-
-  // A relationship or evidence record cannot make an unrelated memory a match.
-  // Retrieval must first establish query relevance; those signals only rank
-  // memories that actually match the user's request.
-  if (terms.length > 0 && matched.length === 0) return 0;
-
   const lexicalScore = terms.length === 0 ? 0 : matched.length / terms.length;
+
+  // Query relevance is a hard gate. Relationship strength, evidence quality,
+  // and confidence may rank relevant memories, but can never turn a weakly
+  // related or unrelated memory into an answer.
+  if (terms.length > 0 && (matched.length === 0 || lexicalScore < 0.2)) return 0;
+
   const relationshipScore =
     relationship && memory.participantIds.includes(relationship.toPersonId)
       ? 0.25
@@ -94,7 +94,7 @@ export function buildMemoryResponse(
 
   if (!strongest) {
     return {
-      answer: "I don't have enough evidence to answer that memory accurately.",
+      answer: "There is not enough evidence to answer that memory accurately.",
       matches: [],
       disclosure: {
         knowledgeState: "unknown",
