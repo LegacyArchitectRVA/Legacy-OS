@@ -14,6 +14,21 @@ const visibilityRank = {
   successor: 3,
 } as const;
 
+const queryStopWords = new Set([
+  "a", "an", "and", "are", "did", "do", "does", "for", "happened",
+  "how", "i", "me", "my", "of", "on", "our", "remember", "the", "to",
+  "us", "was", "we", "what", "when", "where", "who", "with", "you", "your",
+  "trip",
+]);
+
+function queryTerms(query: string): string[] {
+  return query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((term) => term.length > 1 && !queryStopWords.has(term));
+}
+
 export function relationshipBetween(
   graph: MemoryGraph,
   viewerPersonId: string,
@@ -31,7 +46,7 @@ function scoreMemory(
   query: string,
   relationship: MemoryRelationship | undefined,
 ): number {
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = queryTerms(query);
   const haystack = [
     memory.title,
     memory.summary,
@@ -39,14 +54,14 @@ function scoreMemory(
     ...memory.tags,
   ].join(" ").toLowerCase();
 
+  // Conversational filler cannot establish memory relevance. At least one
+  // meaningful query term must match the memory before other signals can rank it.
+  if (terms.length === 0) return 0;
+
   const matched = terms.filter((term) => haystack.includes(term));
-  const lexicalScore = terms.length === 0 ? 0 : matched.length / terms.length;
+  if (matched.length === 0) return 0;
 
-  // Query relevance is a hard gate. Relationship strength, evidence quality,
-  // and confidence may rank relevant memories, but can never turn a weakly
-  // related or unrelated memory into an answer.
-  if (terms.length > 0 && (matched.length === 0 || lexicalScore < 0.2)) return 0;
-
+  const lexicalScore = matched.length / terms.length;
   const relationshipScore =
     relationship && memory.participantIds.includes(relationship.toPersonId)
       ? 0.25
