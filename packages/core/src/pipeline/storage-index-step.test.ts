@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { LegacyIndexer } from '../indexing/indexer';
+import { LegacyIndexer, type IndexedItem } from '../indexing/indexer';
 import { MemoryStorage } from '../persistence/storage';
 import type { PipelineContext } from './integration-pipeline';
 import { StorageIndexStep } from './storage-index-step';
 
 describe('StorageIndexStep', () => {
   it('persists and indexes validated records', async () => {
-    const storage = new MemoryStorage();
+    const storage = new MemoryStorage<IndexedItem>();
     const indexer = new LegacyIndexer();
     const step = new StorageIndexStep(storage, indexer);
-    const record = {
+    const record: IndexedItem = {
       id: 'social-1',
       sourceId: 'device-1',
       name: 'July post',
@@ -36,7 +36,7 @@ describe('StorageIndexStep', () => {
   });
 
   it('rejects unvalidated records', async () => {
-    const step = new StorageIndexStep(new MemoryStorage(), new LegacyIndexer());
+    const step = new StorageIndexStep(new MemoryStorage<IndexedItem>(), new LegacyIndexer());
     const context: PipelineContext = {
       sourceId: 'device-1',
       records: [],
