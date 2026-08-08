@@ -25,9 +25,8 @@ describe('ConnectorPipeline', () => {
 
     expect(result).toEqual({ discovered: 1, ingested: 1, errors: [] });
     const stored = storage.get('device-1:post.json');
-    expect(stored?.value.contentHash).toBeUndefined();
-    expect(stored?.contentHash).toBe('abc123');
-    expect(stored?.sourcePath).toBe('/posts/post.json');
+    expect(stored?.metadata.contentHash).toBe('abc123');
+    expect(stored?.metadata.path).toBe('/posts/post.json');
   });
 
   it('isolates invalid source records from the rest of a scan', async () => {
