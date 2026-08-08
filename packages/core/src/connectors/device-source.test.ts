@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DeviceSourceManager, type DeviceAdapter } from './device-source';
 import type { SourceConnector } from './source';
+import { DeviceAccessController } from '../security/device-access';
 
 describe('DeviceSourceManager', () => {
   it('discovers devices and scans each authorized root', async () => {
@@ -15,7 +16,10 @@ describe('DeviceSourceManager', () => {
       async discover() { return [{ id: 'device', name: 'Test', platform: 'linux', roots: ['/authorized'] }]; },
       connector() { return connector; },
     };
-    const manager = new DeviceSourceManager(adapter);
+    const access = new DeviceAccessController([
+      { deviceId: 'device', allowedRoots: ['/authorized'], allowRead: true },
+    ]);
+    const manager = new DeviceSourceManager(adapter, access);
 
     expect(await manager.discover()).toHaveLength(1);
     const items = [];
