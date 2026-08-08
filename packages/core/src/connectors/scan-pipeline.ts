@@ -1,4 +1,4 @@
-import { LegacyIndexer } from '../indexing/indexer';
+import { LegacyIndexer, type IndexedItem } from '../indexing/indexer';
 import { MemoryStorage, type StorageAdapter } from '../persistence/storage';
 import { IntegrationPipeline, type PipelineContext, type PipelineStep } from '../pipeline/integration-pipeline';
 import { StorageIndexStep } from '../pipeline/storage-index-step';
@@ -24,7 +24,7 @@ export class ConnectorPipeline {
   private readonly pipeline: IntegrationPipeline;
 
   constructor(
-    private readonly storage: StorageAdapter = new MemoryStorage(),
+    private readonly storage: StorageAdapter<IndexedItem> = new MemoryStorage<IndexedItem>(),
     private readonly indexer = new LegacyIndexer(),
   ) {
     this.pipeline = new IntegrationPipeline([
