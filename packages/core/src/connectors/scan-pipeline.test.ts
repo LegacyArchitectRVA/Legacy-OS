@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { ConnectorPipeline } from './scan-pipeline';
 import type { SourceConnector } from './source';
 import { MemoryStorage } from '../persistence/storage';
+import type { IndexedItem } from '../indexing/indexer';
 
 describe('ConnectorPipeline', () => {
   it('runs source records through validation, persistence, and indexing', async () => {
-    const storage = new MemoryStorage();
+    const storage = new MemoryStorage<IndexedItem>();
     const pipeline = new ConnectorPipeline(storage);
     const connector: SourceConnector = {
       id: 'device-1', kind: 'filesystem', displayName: 'Test',
@@ -24,12 +25,12 @@ describe('ConnectorPipeline', () => {
 
     expect(result).toEqual({ discovered: 1, ingested: 1, errors: [] });
     const stored = storage.get('device-1:post.json');
-    expect(stored?.contentHash).toBe('abc123');
-    expect(stored?.sourcePath).toBe('/posts/post.json');
+    expect(stored?.value.metadata.contentHash).toBe('abc123');
+    expect(stored?.value.metadata.path).toBe('/posts/post.json');
   });
 
   it('isolates invalid source records from the rest of a scan', async () => {
-    const pipeline = new ConnectorPipeline(new MemoryStorage());
+    const pipeline = new ConnectorPipeline(new MemoryStorage<IndexedItem>());
     const connector: SourceConnector = {
       id: 'device-2', kind: 'filesystem', displayName: 'Test',
       async *scan() {

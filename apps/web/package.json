@@ -1,1 +1,24 @@
-{"name":"legacyos-web","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start","lint":"next lint"},"dependencies":{"next":"latest","react":"latest","react-dom":"latest","typescript":"latest","@supabase/supabase-js":"latest","openai":"latest"},"devDependencies":{"tailwindcss":"latest"}}
+{
+  "name": "legacyos-web",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "@supabase/supabase-js": "latest",
+    "openai": "latest"
+  },
+  "devDependencies": {
+    "tailwindcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
+}
