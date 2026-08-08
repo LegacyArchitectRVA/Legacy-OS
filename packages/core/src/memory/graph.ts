@@ -26,7 +26,11 @@ export function relationshipBetween(
   );
 }
 
-function scoreMemory(memory: Memory, query: string, relationship: MemoryRelationship | undefined): number {
+function scoreMemory(
+  memory: Memory,
+  query: string,
+  relationship: MemoryRelationship | undefined,
+): number {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   const haystack = [
     memory.title,
@@ -36,15 +40,34 @@ function scoreMemory(memory: Memory, query: string, relationship: MemoryRelation
   ].join(" ").toLowerCase();
 
   const matched = terms.filter((term) => haystack.includes(term));
+
+  // A relationship or evidence record cannot make an unrelated memory a match.
+  // Retrieval must first establish query relevance; those signals only rank
+  // memories that actually match the user's request.
+  if (terms.length > 0 && matched.length === 0) return 0;
+
   const lexicalScore = terms.length === 0 ? 0 : matched.length / terms.length;
-  const relationshipScore = relationship && memory.participantIds.includes(relationship.toPersonId) ? 0.25 : 0;
+  const relationshipScore =
+    relationship && memory.participantIds.includes(relationship.toPersonId)
+      ? 0.25
+      : 0;
   const evidenceScore = Math.min(memory.evidence.length / 4, 0.25);
 
-  return Math.min(1, lexicalScore * 0.5 + relationshipScore + evidenceScore + memory.confidence * 0.25);
+  return Math.min(
+    1,
+    lexicalScore * 0.5 + relationshipScore + evidenceScore + memory.confidence * 0.25,
+  );
 }
 
-export function queryMemories(graph: MemoryGraph, context: MemoryQueryContext): MemoryMatch[] {
-  const relationship = relationshipBetween(graph, context.viewerPersonId, context.subjectPersonId);
+export function queryMemories(
+  graph: MemoryGraph,
+  context: MemoryQueryContext,
+): MemoryMatch[] {
+  const relationship = relationshipBetween(
+    graph,
+    context.viewerPersonId,
+    context.subjectPersonId,
+  );
 
   return graph.memories
     .filter((memory) => memory.subjectPersonId === context.subjectPersonId)
@@ -54,7 +77,9 @@ export function queryMemories(graph: MemoryGraph, context: MemoryQueryContext): 
       score: scoreMemory(memory, context.query, relationship),
       matchedEvidence: memory.evidence,
       relationshipRelevance:
-        relationship && memory.participantIds.includes(context.viewerPersonId) ? 1 : 0,
+        relationship && memory.participantIds.includes(context.viewerPersonId)
+          ? 1
+          : 0,
     }))
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -71,13 +96,23 @@ export function buildMemoryResponse(
     return {
       answer: "I don't have enough evidence to answer that memory accurately.",
       matches: [],
-      disclosure: { knowledgeState: "unknown", confidence: 0, evidenceCount: 0 },
+      disclosure: {
+        knowledgeState: "unknown",
+        confidence: 0,
+        evidenceCount: 0,
+      },
     };
   }
 
   const memory = strongest.memory;
-  const relationship = relationshipBetween(graph, context.viewerPersonId, context.subjectPersonId);
-  const relationshipLead = relationship?.label ? `As ${relationship.label}, ` : "";
+  const relationship = relationshipBetween(
+    graph,
+    context.viewerPersonId,
+    context.subjectPersonId,
+  );
+  const relationshipLead = relationship?.label
+    ? `As ${relationship.label}, `
+    : "";
   const answer = `${relationshipLead}${memory.summary}`;
 
   return {
