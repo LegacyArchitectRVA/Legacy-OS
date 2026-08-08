@@ -31,10 +31,13 @@ describe('FilesystemConnector security', () => {
       ]);
       const connector = new FilesystemConnector('device-1', root, access);
       const items: unknown[] = [];
-      await expect(async () => {
-        for await (const item of connector.scan()) items.push(item);
-      }).rejects.toThrow('Path access denied');
+
+      for await (const item of connector.scan()) items.push(item);
+
+      // Symlink entries are ignored rather than traversed, so content outside
+      // the authorized root can never enter the scan result.
       expect(items).toHaveLength(0);
+      expect(items).not.toContainEqual(expect.objectContaining({ name: 'secret.txt' }));
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(outside, { recursive: true, force: true });
