@@ -8,6 +8,7 @@
     "build": "tsc"
   },
   "devDependencies": {
+    "@types/node": "latest",
     "typescript": "latest",
     "vitest": "latest"
   }
