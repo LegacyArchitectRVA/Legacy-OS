@@ -21,7 +21,7 @@ const adapter: DeviceAdapter = {
 
 describe('DeviceSourceManager authorization enforcement', () => {
   const access = new DeviceAccessController([
-    { deviceId: 'device-1', roots: ['/safe'], modes: ['read'] },
+    { deviceId: 'device-1', allowedRoots: ['/safe'], allowRead: true },
   ]);
 
   it('filters unauthorized devices during discovery', async () => {
