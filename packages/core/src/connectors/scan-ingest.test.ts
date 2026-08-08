@@ -3,10 +3,11 @@ import { IngestionPipeline } from '../ingestion/pipeline';
 import { MemoryStorage } from '../persistence/storage';
 import type { SourceConnector } from './source';
 import { ConnectorScanIngestor } from './scan-ingest';
+import type { IndexedItem } from '../indexing/indexer';
 
 describe('ConnectorScanIngestor', () => {
   it('streams discovered source items into ingestion', async () => {
-    const storage = new MemoryStorage();
+    const storage = new MemoryStorage<IndexedItem>();
     const pipeline = new IngestionPipeline(storage);
     const ingestor = new ConnectorScanIngestor(pipeline);
     const connector: SourceConnector = {
