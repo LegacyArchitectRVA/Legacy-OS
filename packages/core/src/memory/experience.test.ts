@@ -18,18 +18,8 @@ describe("memory experience", () => {
             location: "Smith Mountain Lake",
             participantIds: ["dad", "daughter"],
             evidence: [
-              {
-                id: "evidence:photo",
-                sourceId: "photo:2004",
-                kind: "photo",
-                confidence: 0.99,
-              },
-              {
-                id: "evidence:video",
-                sourceId: "video:2004",
-                kind: "video",
-                confidence: 0.98,
-              },
+              { id: "evidence:photo", sourceId: "photo:2004", kind: "photo", confidence: 0.99 },
+              { id: "evidence:video", sourceId: "video:2004", kind: "video", confidence: 0.98 },
             ],
             knowledgeState: "known",
             confidence: 0.97,
@@ -41,11 +31,7 @@ describe("memory experience", () => {
           matchedEvidence: [],
         },
       ],
-      disclosure: {
-        knowledgeState: "known",
-        confidence: 0.97,
-        evidenceCount: 2,
-      },
+      disclosure: { knowledgeState: "known", confidence: 0.97, evidenceCount: 2 },
     };
 
     response.matches[0].matchedEvidence = response.matches[0].memory.evidence;
@@ -53,12 +39,12 @@ describe("memory experience", () => {
 
     expect(experience).not.toBeNull();
     expect(experience?.memoryId).toBe("memory:fishing");
+    expect(experience?.avatar.identityDisclosure).toBe("ai-representation");
+    expect(experience?.scene.environment).toBe("reconstructed");
     expect(experience?.evidenceIds).toEqual(["evidence:photo", "evidence:video"]);
-    expect(experience?.mediaCues.map((cue) => cue.sourceId)).toEqual([
-      "photo:2004",
-      "video:2004",
-    ]);
+    expect(experience?.mediaCues[0]?.spatial.anchor).toBe("left");
     expect(experience?.actions.some((action) => action.kind === "scene")).toBe(true);
+    expect(experience?.actions.some((action) => action.kind === "show-media")).toBe(true);
   });
 
   it("does not create an experience without a grounded memory match", () => {
