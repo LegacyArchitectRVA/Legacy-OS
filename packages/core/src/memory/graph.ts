@@ -14,6 +14,21 @@ const visibilityRank = {
   successor: 3,
 } as const;
 
+const queryStopWords = new Set([
+  "a", "an", "and", "are", "did", "do", "does", "for", "happened",
+  "how", "i", "me", "my", "of", "on", "our", "remember", "the", "to",
+  "us", "was", "we", "what", "when", "where", "who", "with", "you", "your",
+  "trip",
+]);
+
+function queryTerms(query: string): string[] {
+  return query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((term) => term.length > 1 && !queryStopWords.has(term));
+}
+
 export function relationshipBetween(
   graph: MemoryGraph,
   viewerPersonId: string,
@@ -26,8 +41,12 @@ export function relationshipBetween(
   );
 }
 
-function scoreMemory(memory: Memory, query: string, relationship: MemoryRelationship | undefined): number {
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+function scoreMemory(
+  memory: Memory,
+  query: string,
+  relationship: MemoryRelationship | undefined,
+): number {
+  const terms = queryTerms(query);
   const haystack = [
     memory.title,
     memory.summary,
@@ -35,16 +54,35 @@ function scoreMemory(memory: Memory, query: string, relationship: MemoryRelation
     ...memory.tags,
   ].join(" ").toLowerCase();
 
+  // Conversational filler cannot establish memory relevance. At least one
+  // meaningful query term must match the memory before other signals can rank it.
+  if (terms.length === 0) return 0;
+
   const matched = terms.filter((term) => haystack.includes(term));
-  const lexicalScore = terms.length === 0 ? 0 : matched.length / terms.length;
-  const relationshipScore = relationship && memory.participantIds.includes(relationship.toPersonId) ? 0.25 : 0;
+  if (matched.length === 0) return 0;
+
+  const lexicalScore = matched.length / terms.length;
+  const relationshipScore =
+    relationship && memory.participantIds.includes(relationship.toPersonId)
+      ? 0.25
+      : 0;
   const evidenceScore = Math.min(memory.evidence.length / 4, 0.25);
 
-  return Math.min(1, lexicalScore * 0.5 + relationshipScore + evidenceScore + memory.confidence * 0.25);
+  return Math.min(
+    1,
+    lexicalScore * 0.5 + relationshipScore + evidenceScore + memory.confidence * 0.25,
+  );
 }
 
-export function queryMemories(graph: MemoryGraph, context: MemoryQueryContext): MemoryMatch[] {
-  const relationship = relationshipBetween(graph, context.viewerPersonId, context.subjectPersonId);
+export function queryMemories(
+  graph: MemoryGraph,
+  context: MemoryQueryContext,
+): MemoryMatch[] {
+  const relationship = relationshipBetween(
+    graph,
+    context.viewerPersonId,
+    context.subjectPersonId,
+  );
 
   return graph.memories
     .filter((memory) => memory.subjectPersonId === context.subjectPersonId)
@@ -54,7 +92,9 @@ export function queryMemories(graph: MemoryGraph, context: MemoryQueryContext): 
       score: scoreMemory(memory, context.query, relationship),
       matchedEvidence: memory.evidence,
       relationshipRelevance:
-        relationship && memory.participantIds.includes(context.viewerPersonId) ? 1 : 0,
+        relationship && memory.participantIds.includes(context.viewerPersonId)
+          ? 1
+          : 0,
     }))
     .filter((match) => match.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -69,15 +109,25 @@ export function buildMemoryResponse(
 
   if (!strongest) {
     return {
-      answer: "I don't have enough evidence to answer that memory accurately.",
+      answer: "There is not enough evidence to answer that memory accurately.",
       matches: [],
-      disclosure: { knowledgeState: "unknown", confidence: 0, evidenceCount: 0 },
+      disclosure: {
+        knowledgeState: "unknown",
+        confidence: 0,
+        evidenceCount: 0,
+      },
     };
   }
 
   const memory = strongest.memory;
-  const relationship = relationshipBetween(graph, context.viewerPersonId, context.subjectPersonId);
-  const relationshipLead = relationship?.label ? `As ${relationship.label}, ` : "";
+  const relationship = relationshipBetween(
+    graph,
+    context.viewerPersonId,
+    context.subjectPersonId,
+  );
+  const relationshipLead = relationship?.label
+    ? `As ${relationship.label}, `
+    : "";
   const answer = `${relationshipLead}${memory.summary}`;
 
   return {

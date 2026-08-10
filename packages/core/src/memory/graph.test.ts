@@ -87,6 +87,17 @@ describe("memory graph", () => {
     expect(response.disclosure.evidenceCount).toBe(2);
   });
 
+  it("does not let generic words create a false memory match", () => {
+    const response = buildMemoryResponse(graph, {
+      viewerPersonId: "sarah",
+      subjectPersonId: "dad",
+      query: "What happened on our trip to Mars?",
+    });
+
+    expect(response.disclosure.knowledgeState).toBe("unknown");
+    expect(response.matches).toHaveLength(0);
+  });
+
   it("does not invent an answer when there is no matching evidence", () => {
     const response = buildMemoryResponse(graph, {
       viewerPersonId: "sarah",
