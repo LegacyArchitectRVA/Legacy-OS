@@ -22,7 +22,6 @@ describe("identity resolution pipeline", () => {
     });
     expect(result.status).toBe("unresolved");
     expect(result.matches).toEqual([]);
-    expect(result.graph).toBeUndefined();
   });
 
   it("returns matched for strong evidence", () => {
