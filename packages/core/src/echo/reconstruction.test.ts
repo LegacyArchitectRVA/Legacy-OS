@@ -1,15 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { createExperiencePlan } from "./reconstruction.js";
+import { authorizeExperiencePlan, createExperiencePlan } from "./reconstruction.js";
 
-describe("Echo reconstruction contract", () => {
-  it("marks generated scene content as reconstructed rather than known", () => {
-    const plan = createExperiencePlan("dad", "child", "memory:fishing", ["photo:1", "video:1"]);
-    expect(plan.segments[0]).toMatchObject({
-      kind: "scene",
-      knowledgeState: "reconstructed",
-      generated: true,
-      consentScope: "reconstruction",
-    });
-    expect(plan.segments[0]?.sourceIds).toEqual(["photo:1", "video:1"]);
+describe("consent-gated reconstruction", () => {
+  const plan = createExperiencePlan("dad", "child", "memory:fishing", ["photo:fishing"]);
+
+  it("requires explicit reconstruction consent", () => {
+    expect(() => authorizeExperiencePlan(plan, {
+      enabled: false,
+      scope: ["scene"],
+      grantedBy: "child",
+      grantedAt: "2026-08-11T00:00:00Z",
+    })).toThrow("consent is not enabled");
+  });
+
+  it("requires consent for every requested reconstruction kind", () => {
+    expect(() => authorizeExperiencePlan(plan, {
+      enabled: true,
+      scope: ["voice"],
+      grantedBy: "child",
+      grantedAt: "2026-08-11T00:00:00Z",
+    })).toThrow("does not cover scene");
+  });
+
+  it("allows an evidence-backed, explicitly authorized experience", () => {
+    expect(authorizeExperiencePlan(plan, {
+      enabled: true,
+      scope: ["scene"],
+      grantedBy: "child",
+      grantedAt: "2026-08-11T00:00:00Z",
+    })).toBe(plan);
   });
 });
