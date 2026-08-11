@@ -1,4 +1,4 @@
-import type { ExtractionAdapter, ExtractionResult } from "./extraction.js";
+import type { ExtractionResult } from "./extraction.js";
 import type { IngestionRecord } from "./ingestion.js";
 
 export interface ExtractionProvider {
@@ -6,17 +6,6 @@ export interface ExtractionProvider {
   version: string;
   supports: readonly string[];
   extract(record: IngestionRecord): Promise<ExtractionResult>;
-}
-
-/** Wraps any future model/provider behind the deterministic core contract. */
-export function createProviderAdapter(provider: ExtractionProvider): ExtractionAdapter {
-  return {
-    extract(record) {
-      throw new Error(
-        `Provider ${provider.id} is asynchronous; use extractWithProvider instead.`,
-      );
-    },
-  };
 }
 
 export async function extractWithProvider(
