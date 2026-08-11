@@ -6,6 +6,14 @@ export interface ReconstructionSource {
   confidence: number;
 }
 
+export interface ReconstructionConsent {
+  enabled: boolean;
+  scope: readonly ("voice" | "avatar" | "scene" | "memory-playback")[];
+  grantedBy: string;
+  grantedAt: string;
+  expiresAt?: string;
+}
+
 export interface ReconstructionSegment {
   id: string;
   kind: ReconstructionKind;
@@ -24,12 +32,25 @@ export interface EchoExperiencePlan {
   segments: ReconstructionSegment[];
 }
 
-/**
- * A renderer consumes this contract. The core never pretends generated motion,
- * speech, or scenery is original evidence.
- */
 export function createReconstructionSegment(input: Omit<ReconstructionSegment, "generated">): ReconstructionSegment {
+  if (input.sourceIds.length === 0) throw new Error("Reconstruction requires source evidence");
   return { ...input, generated: true };
+}
+
+export function authorizeExperiencePlan(
+  plan: EchoExperiencePlan,
+  consent: ReconstructionConsent,
+): EchoExperiencePlan {
+  if (!consent.enabled) throw new Error("Reconstruction consent is not enabled");
+  for (const segment of plan.segments) {
+    if (!consent.scope.includes(segment.kind)) {
+      throw new Error(`Reconstruction consent does not cover ${segment.kind}`);
+    }
+    if (segment.sourceIds.length === 0) {
+      throw new Error(`Reconstruction segment ${segment.id} has no source evidence`);
+    }
+  }
+  return plan;
 }
 
 export function createExperiencePlan(
