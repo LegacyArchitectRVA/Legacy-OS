@@ -1,5 +1,4 @@
 import type { MemoryGraph } from "../memory/model.js";
-import { resolveIdentityObservation } from "../memory/identity-pipeline.js";
 
 export interface EchoSession {
   viewerPersonId: string;
@@ -40,16 +39,15 @@ export function startEchoSession(
   const subjectExists = graph.people.some((person) => person.id === query.subjectPersonId);
   if (!viewerExists || !subjectExists) throw new Error("Unknown Echo session participant");
 
-  return {
-    viewerPersonId: query.viewerPersonId,
-    subjectPersonId: query.subjectPersonId,
-    authorized: query.viewerPersonId === query.subjectPersonId || graph.relationships.some(
+  const authorized =
+    query.viewerPersonId === query.subjectPersonId ||
+    graph.relationships.some(
       (relationship) =>
         (relationship.fromPersonId === query.viewerPersonId && relationship.toPersonId === query.subjectPersonId) ||
         (relationship.fromPersonId === query.subjectPersonId && relationship.toPersonId === query.viewerPersonId),
-    ),
-    startedAt,
-  };
+    );
+
+  return { viewerPersonId: query.viewerPersonId, subjectPersonId: query.subjectPersonId, authorized, startedAt };
 }
 
 export function answerEchoQuestion(
@@ -58,13 +56,7 @@ export function answerEchoQuestion(
   question: string,
 ): EchoTurn {
   if (!session.authorized) {
-    return {
-      question,
-      answer: "I can't share that person's private legacy information with you.",
-      memoryIds: [],
-      evidenceSourceIds: [],
-      grounded: false,
-    };
+    return { question, answer: "I can't share that person's private legacy information with you.", memoryIds: [], evidenceSourceIds: [], grounded: false };
   }
 
   const terms = normalize(question).split(/\s+/).filter(Boolean);
@@ -75,13 +67,7 @@ export function answerEchoQuestion(
   });
 
   if (matches.length === 0) {
-    return {
-      question,
-      answer: "I don't have enough evidence to answer that.",
-      memoryIds: [],
-      evidenceSourceIds: [],
-      grounded: false,
-    };
+    return { question, answer: "I don't have enough evidence to answer that.", memoryIds: [], evidenceSourceIds: [], grounded: false };
   }
 
   const memory = matches[0]!;
