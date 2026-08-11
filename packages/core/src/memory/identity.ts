@@ -1,4 +1,4 @@
-import type { MemoryGraph, Person } from "./model.js";
+import type { MemoryGraph, MemoryPerson } from "./model.js";
 
 export interface IdentityObservation {
   value: string;
@@ -17,11 +17,11 @@ function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9@+]+/g, " ").replace(/\s+/g, " ");
 }
 
-function personNames(person: Person): string[] {
-  return [person.name, ...(person.aliases ?? [])].map(normalize).filter(Boolean);
+function personNames(person: MemoryPerson): string[] {
+  return [person.displayName, ...person.relationshipLabels].map(normalize).filter(Boolean);
 }
 
-/** Conservative identity matching. A weak name similarity never creates an identity. */
+/** Conservative identity matching. Weak evidence never creates an identity match. */
 export function matchIdentity(
   graph: MemoryGraph,
   observation: IdentityObservation,
@@ -31,9 +31,7 @@ export function matchIdentity(
 
   return graph.people
     .map((person) => {
-      const names = personNames(person);
-      const exact = names.some((name) => name === value);
-      if (!exact) return null;
+      if (!personNames(person).some((name) => name === value)) return null;
       return {
         personId: person.id,
         score: Math.min(1, observation.confidence),
