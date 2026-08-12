@@ -1,6 +1,6 @@
 import type { MemoryEvidence, MemoryGraph, MemorySource } from "../memory/model.js";
 
-export type FactStrength = "direct" | "partial" | "corroborated";
+export type FactStrength = "direct" | "partial" | "corroborated" | "contradictory";
 
 export interface InvestigativeFinding {
   claim: string;
@@ -15,6 +15,14 @@ export interface InvestigationResult {
   question: string;
   findings: InvestigativeFinding[];
   conclusion: string;
+  contradictions: Contradiction[];
+}
+
+export interface Contradiction {
+  claimA: string;
+  claimB: string;
+  sourceIds: string[];
+  reason: string;
 }
 
 function normalize(value: string): string {
@@ -27,6 +35,35 @@ function evidenceForMemory(graph: MemoryGraph, memoryId: string): MemoryEvidence
 
 function sourceForEvidence(graph: MemoryGraph, evidence: MemoryEvidence): MemorySource | undefined {
   return graph.sources.find((source) => source.id === evidence.sourceId);
+}
+
+function contradictionPair(a: string, b: string): boolean {
+  const left = normalize(a);
+  const right = normalize(b);
+  return (
+    (left.includes(" ate ") && right.includes(" did not eat ")) ||
+    (left.includes(" did not eat ") && right.includes(" ate ")) ||
+    (left.includes(" was at ") && right.includes(" was not at ")) ||
+    (left.includes(" was not at ") && right.includes(" was at "))
+  );
+}
+
+export function detectContradictions(findings: readonly InvestigativeFinding[]): Contradiction[] {
+  const contradictions: Contradiction[] = [];
+  for (let i = 0; i < findings.length; i += 1) {
+    for (let j = i + 1; j < findings.length; j += 1) {
+      const a = findings[i]!;
+      const b = findings[j]!;
+      if (!contradictionPair(a.claim, b.claim)) continue;
+      contradictions.push({
+        claimA: a.claim,
+        claimB: b.claim,
+        sourceIds: [...new Set([...a.sourceIds, ...b.sourceIds])],
+        reason: "The available sources make incompatible claims; Echo will not choose between them without stronger evidence.",
+      });
+    }
+  }
+  return contradictions;
 }
 
 /** Detective-style retrieval without detective-style speculation. */
@@ -65,14 +102,24 @@ export function investigate(
   }
 
   if (findings.length === 0) {
-    return { question, findings: [], conclusion: "I couldn't find enough evidence to answer that." };
+    return { question, findings: [], conclusion: "I couldn't find enough evidence to answer that.", contradictions: [] };
   }
 
+  const contradictions = detectContradictions(findings);
   const uniqueSourceIds = new Set(findings.flatMap((finding) => finding.sourceIds));
   const strongest = [...findings].sort((a, b) => b.confidence - a.confidence)[0]!;
   const sourceKinds = [...uniqueSourceIds]
     .map((id) => graph.sources.find((source) => source.id === id)?.kind)
     .filter((kind): kind is MemorySource["kind"] => kind !== undefined);
+
+  if (contradictions.length > 0) {
+    return {
+      question,
+      findings: findings.map((finding) => ({ ...finding, strength: "contradictory" })),
+      conclusion: "I found conflicting evidence, so I can't reliably choose one version of events.",
+      contradictions,
+    };
+  }
 
   return {
     question,
@@ -80,6 +127,7 @@ export function investigate(
     conclusion: uniqueSourceIds.size > 1
       ? `I found evidence across ${uniqueSourceIds.size} sources (${[...new Set(sourceKinds)].join(", ")}). ${strongest.claim}`
       : strongest.claim,
+    contradictions: [],
   };
 }
 
