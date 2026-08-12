@@ -29,11 +29,7 @@ function sourceForEvidence(graph: MemoryGraph, evidence: MemoryEvidence): Memory
   return graph.sources.find((source) => source.id === evidence.sourceId);
 }
 
-/**
- * Detective-style retrieval without detective-style speculation.
- * It can connect facts across sources, but every conclusion must identify its evidence
- * and explicitly expose what the evidence cannot establish.
- */
+/** Detective-style retrieval without detective-style speculation. */
 export function investigate(
   graph: MemoryGraph,
   question: string,
@@ -49,7 +45,6 @@ export function investigate(
     const sources = evidence
       .map((item) => sourceForEvidence(graph, item))
       .filter((source): source is MemorySource => source !== undefined);
-
     if (evidence.length === 0) continue;
 
     const direct = evidence.filter((item) => item.confidence >= 0.9);
@@ -70,21 +65,20 @@ export function investigate(
   }
 
   if (findings.length === 0) {
-    return {
-      question,
-      findings: [],
-      conclusion: "I couldn't find enough evidence to answer that.",
-    };
+    return { question, findings: [], conclusion: "I couldn't find enough evidence to answer that." };
   }
 
-  const strongest = findings.sort((a, b) => b.confidence - a.confidence)[0]!;
-  const sourceCount = new Set(findings.flatMap((finding) => finding.sourceIds)).size;
+  const uniqueSourceIds = new Set(findings.flatMap((finding) => finding.sourceIds));
+  const strongest = [...findings].sort((a, b) => b.confidence - a.confidence)[0]!;
+  const sourceKinds = [...uniqueSourceIds]
+    .map((id) => graph.sources.find((source) => source.id === id)?.kind)
+    .filter((kind): kind is MemorySource["kind"] => kind !== undefined);
 
   return {
     question,
-    findings,
-    conclusion: sourceCount > 1
-      ? `I found evidence across ${sourceCount} sources. ${strongest.claim}`
+    findings: findings.sort((a, b) => b.confidence - a.confidence),
+    conclusion: uniqueSourceIds.size > 1
+      ? `I found evidence across ${uniqueSourceIds.size} sources (${[...new Set(sourceKinds)].join(", ")}). ${strongest.claim}`
       : strongest.claim,
   };
 }
