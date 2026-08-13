@@ -28,12 +28,14 @@ export function authorizeEchoAccess(
   context: MemoryQueryContext,
   allowedVisibility: MemoryVisibility = "family",
 ): EchoAuthorization {
-  const relationshipVerified = graph.relationships.some(
-    (relationship) =>
-      relationship.fromPersonId === context.subjectPersonId &&
-      relationship.toPersonId === context.viewerPersonId &&
-      relationship.confidence >= 0.8,
-  );
+  const relationshipVerified =
+    context.viewerPersonId === context.subjectPersonId ||
+    graph.relationships.some(
+      (relationship) =>
+        relationship.confidence >= 0.8 &&
+        ((relationship.fromPersonId === context.subjectPersonId && relationship.toPersonId === context.viewerPersonId) ||
+          (relationship.fromPersonId === context.viewerPersonId && relationship.toPersonId === context.subjectPersonId)),
+    );
 
   return {
     viewerPersonId: context.viewerPersonId,
