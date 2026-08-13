@@ -4,8 +4,8 @@ import type { MemoryGraph } from "./model.js";
 
 const graph: MemoryGraph = {
   people: [
-    { id: "dad", name: "Robert Rothchild", aliases: ["Bob"] },
-    { id: "mom", name: "Jane Rothchild", aliases: ["Mom"] },
+    { id: "dad", displayName: "Robert Rothchild", relationshipLabels: ["father", "Bob"] },
+    { id: "mom", displayName: "Jane Rothchild", relationshipLabels: ["mother", "Mom"] },
   ],
   relationships: [],
   sources: [],
