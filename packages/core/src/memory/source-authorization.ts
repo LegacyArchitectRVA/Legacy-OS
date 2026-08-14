@@ -1,8 +1,8 @@
 import type { MemoryVisibility } from "./model.js";
 import {
-  canConnectSource,
-  type ConsentGrant,
+  canUseConnectedSource,
   type ConsentScope,
+  type EchoConsentRecord,
 } from "./consent-vault.js";
 
 export interface ProtectedSourceRequest {
@@ -20,26 +20,25 @@ export interface SourceAuthorizationDecision {
 }
 
 export function authorizeSourceConnection(
-  grants: ConsentGrant[],
+  records: EchoConsentRecord[],
   request: ProtectedSourceRequest,
   now = new Date(),
 ): SourceAuthorizationDecision {
-  const grant = grants.find(
+  const record = records.find(
     (candidate) =>
       candidate.subjectPersonId === request.subjectPersonId &&
       candidate.scope === request.scope,
   );
 
-  if (!grant) {
+  if (!record) {
     return { allowed: false, sourceId: request.sourceId, scope: request.scope, reason: "missing" };
   }
-
-  if (!grant.signature) {
+  if (!record.signature) {
     return { allowed: false, sourceId: request.sourceId, scope: request.scope, reason: "pending" };
   }
 
-  const allowed = canConnectSource(
-    grants,
+  const allowed = canUseConnectedSource(
+    records,
     request.subjectPersonId,
     request.scope,
     request.visibility,
@@ -49,14 +48,13 @@ export function authorizeSourceConnection(
   if (allowed) {
     return { allowed: true, sourceId: request.sourceId, scope: request.scope, reason: "authorized" };
   }
-
-  if (grant.status === "revoked") {
+  if (record.status === "revoked") {
     return { allowed: false, sourceId: request.sourceId, scope: request.scope, reason: "revoked" };
   }
-  if (grant.status === "expired" || (grant.expiresAt && new Date(grant.expiresAt) <= now)) {
+  if (record.status === "expired" || (record.expiresAt && new Date(record.expiresAt) <= now)) {
     return { allowed: false, sourceId: request.sourceId, scope: request.scope, reason: "expired" };
   }
-  if (grant.status !== "granted") {
+  if (record.status !== "granted") {
     return { allowed: false, sourceId: request.sourceId, scope: request.scope, reason: "pending" };
   }
 
