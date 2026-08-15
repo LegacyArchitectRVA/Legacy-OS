@@ -5,7 +5,7 @@ describe("Echo response contract", () => {
   it("defaults the response to English while preserving original evidence language", () => {
     const response = buildEchoResponse({
       answer: "He ate at the restaurant.",
-      language: { inputLanguage: "es" },
+      language: {},
       visibility: "successor",
       evidenceLanguages: [
         {
@@ -21,7 +21,7 @@ describe("Echo response contract", () => {
       ],
     });
 
-    expect(response.responseLanguage).toBe("es");
+    expect(response.responseLanguage).toBe("en-US");
     expect(response.evidenceLanguages[0].language).toBe("es");
     expect(response.originalMedia[0].language).toBe("es");
     expect(response.playback.playOriginal).toBe(true);
