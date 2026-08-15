@@ -13,6 +13,22 @@ describe("temporal evidence", () => {
     expect(clusters[0]?.sourceIds).toEqual(["receipt:1", "photo:1"]);
   });
 
+  it("does not chain a later event through an earlier cluster", () => {
+    const clusters = clusterTemporalEvidence([
+      { sourceId: "a", capturedAt: "2025-06-01T00:00:00Z", place: "Chicago" },
+      { sourceId: "b", capturedAt: "2025-06-03T00:00:00Z", place: "Chicago" },
+      { sourceId: "c", capturedAt: "2025-06-05T00:00:00Z", place: "Chicago" },
+    ], 2);
+
+    expect(clusters).toHaveLength(2);
+    expect(clusters[0]?.sourceIds).toEqual(["a", "b"]);
+    expect(clusters[1]?.sourceIds).toEqual(["c"]);
+  });
+
+  it("rejects an invalid clustering window", () => {
+    expect(() => clusterTemporalEvidence([], -1)).toThrow("windowDays");
+  });
+
   it("checks an evidence item against an explicit event window", () => {
     expect(
       evidenceFallsWithinWindow(
