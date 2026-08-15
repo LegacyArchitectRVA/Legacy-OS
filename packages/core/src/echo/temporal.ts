@@ -29,15 +29,20 @@ export function clusterTemporalEvidence(
   evidence: readonly TemporalEvidence[],
   windowDays = 2,
 ): TemporalCluster[] {
+  if (!Number.isFinite(windowDays) || windowDays < 0) {
+    throw new Error("windowDays must be a non-negative finite number");
+  }
+
   const clusters: TemporalCluster[] = [];
-  const sorted = [...evidence].sort((a, b) => (timeOf(a) ?? 0) - (timeOf(b) ?? 0));
+  const sorted = [...evidence].sort((a, b) => (timeOf(a) ?? Number.POSITIVE_INFINITY) - (timeOf(b) ?? Number.POSITIVE_INFINITY));
 
   for (const item of sorted) {
     const time = timeOf(item);
     const existing = clusters.find((cluster) => {
-      if (time === undefined || !cluster.startAt) return false;
-      const clusterTime = Date.parse(cluster.startAt);
-      return !Number.isNaN(clusterTime) && Math.abs(time - clusterTime) <= windowDays * DAY_MS;
+      if (time === undefined || !cluster.endAt) return false;
+      const clusterEnd = Date.parse(cluster.endAt);
+      if (Number.isNaN(clusterEnd)) return false;
+      return Math.abs(time - clusterEnd) <= windowDays * DAY_MS;
     });
 
     if (!existing) {
