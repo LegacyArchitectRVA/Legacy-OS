@@ -1,9 +1,4 @@
-import type {
-  Memory,
-  MemoryEvidence,
-  MemoryKnowledgeState,
-  MemoryResponse,
-} from "./model.js";
+import type { Memory, MemoryEvidence, MemoryKnowledgeState, MemoryResponse } from "./model.js";
 
 export interface InvestigatorFinding {
   memoryId: string;
@@ -19,9 +14,7 @@ export interface InvestigatorResult extends MemoryResponse {
 
 function relevance(memory: Memory, query: string): number {
   const haystack = [memory.title, memory.summary, memory.location, ...memory.tags]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+    .filter(Boolean).join(" ").toLowerCase();
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return 0;
   return terms.filter((term) => haystack.includes(term)).length / terms.length;
@@ -42,22 +35,14 @@ function stateFor(confidence: number, evidenceCount: number): MemoryKnowledgeSta
   return "inferred";
 }
 
-export function investigate(
-  memories: Memory[],
-  query: string,
-): InvestigatorResult {
-  const matches = memories
-    .map((memory) => {
-      const matchedEvidence = evidenceFor(memory, query);
-      const score = Math.min(1, relevance(memory, query) * 0.6 + (matchedEvidence.length ? 0.4 : 0));
-      return {
-        memory,
-        score,
-        matchedEvidence,
-        relationshipRelevance: 0,
-      };
-    })
-    .filter((match) => match.score > 0)
+export function investigate(memories: Memory[], query: string): InvestigatorResult {
+  const matches = memories.map((memory) => {
+    const matchedEvidence = evidenceFor(memory, query);
+    const score = Math.min(1, relevance(memory, query) * 0.6 + (matchedEvidence.length ? 0.4 : 0));
+    return { memory, score, matchedEvidence, relationshipRelevance: 0 };
+  })
+    // A summary alone is never enough for an investigator claim.
+    .filter((match) => match.matchedEvidence.length > 0)
     .sort((a, b) => b.score - a.score);
 
   const findings = matches.map((match) => ({
@@ -73,11 +58,7 @@ export function investigate(
   return {
     answer: findings[0]?.statement ?? "I couldn't find enough evidence to answer that.",
     matches,
-    disclosure: {
-      knowledgeState: stateFor(bestConfidence, evidenceCount),
-      confidence: bestConfidence,
-      evidenceCount,
-    },
+    disclosure: { knowledgeState: stateFor(bestConfidence, evidenceCount), confidence: bestConfidence, evidenceCount },
     findings,
     gaps: findings.length ? [] : ["No matching evidence was found in the authorized memory set."],
   };
