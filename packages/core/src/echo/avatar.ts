@@ -4,6 +4,7 @@ export interface AvatarReference {
   modelProvider: string;
   modelVersion: string;
   consentRequired: true;
+  consentGranted: boolean;
 }
 
 export interface AvatarPlan {
@@ -13,6 +14,9 @@ export interface AvatarPlan {
 }
 
 export function createAvatarPlan(reference: AvatarReference): AvatarPlan {
+  if (!reference.consentGranted) {
+    throw new Error("Avatar reconstruction requires explicit consent");
+  }
   if (reference.sourceIds.length === 0) {
     throw new Error("Avatar reconstruction requires source evidence");
   }
