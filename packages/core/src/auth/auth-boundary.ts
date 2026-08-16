@@ -1,5 +1,4 @@
 import {
-  isSessionActive,
   requireActiveSession,
   type AuthSession,
   type AuthenticationAssurance,
@@ -33,15 +32,9 @@ export async function authenticateWithVoice(provider: VoiceAuthProvider, request
 
 export function authorizeAuthenticatedOperation(session: AuthSession, operation: BiometricOperation, biometric?: BiometricAssertion, now = new Date()): void {
   requireActiveSession(session, now);
-  if (operation !== "login" && session.personId !== biometric?.personId) throw new Error("Authentication identity mismatch");
   if (operation === "login") return;
   if (!biometric) throw new Error("Step-up biometric verification required");
+  if (session.personId !== biometric.personId) throw new Error("Authentication identity mismatch");
   const result = validateBiometricAssertion(biometric, session.personId, biometric.challengeId, operation);
   if (!result.allowed) throw new Error(`Biometric step-up rejected: ${result.reason}`);
-}
-
-export function sessionCanPerformOperation(session: AuthSession, operation: BiometricOperation, now = new Date()): boolean {
-  if (!isSessionActive(session, now)) return false;
-  if (operation === "login") return true;
-  return session.assurance === "strong" || session.assurance === "step-up";
 }
