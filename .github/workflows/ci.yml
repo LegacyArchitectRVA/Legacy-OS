@@ -29,11 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Verify workspace
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
 
       - name: Test
         run: npm test
