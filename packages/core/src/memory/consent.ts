@@ -34,14 +34,17 @@ export function evaluateConsent(
   requestedVisibility: MemoryVisibility,
   now = new Date(),
 ): ConsentDecision {
-  const grant = grants.find(
-    (candidate) =>
-      candidate.subjectPersonId === subjectPersonId && candidate.scope === scope,
-  );
+  const matchingGrants = grants
+    .filter((candidate) => candidate.subjectPersonId === subjectPersonId && candidate.scope === scope)
+    .sort((a, b) => new Date(b.grantedAt).getTime() - new Date(a.grantedAt).getTime());
 
-  if (!grant) return { allowed: false, reason: "missing" };
+  if (matchingGrants.length === 0) return { allowed: false, reason: "missing" };
+
+  const grant = matchingGrants[0];
   if (grant.status === "revoked") return { allowed: false, reason: "revoked" };
   if (grant.status !== "granted") return { allowed: false, reason: "missing" };
+  if (Number.isNaN(new Date(grant.grantedAt).getTime())) return { allowed: false, reason: "missing" };
+  if (new Date(grant.grantedAt) > now) return { allowed: false, reason: "missing" };
   if (grant.expiresAt && new Date(grant.expiresAt) <= now) {
     return { allowed: false, reason: "expired" };
   }
