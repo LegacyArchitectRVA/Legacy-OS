@@ -31,10 +31,11 @@ describe("Echo authorization", () => {
     const authorization = authorizeEchoAccess(graph, context, "family", [{ ...grant, status: "revoked" }]);
     expect(canAccessMemory(memory, authorization).reason).toBe("consent-revoked");
   });
-  it("rejects the old reverse-direction relationship loophole", () => {
+  it("accepts either stored direction for the same verified relationship", () => {
     const reverseGraph = { ...graph, relationships: [{ ...graph.relationships[0], fromPersonId: "dad", toPersonId: "daughter" }] };
     const authorization = authorizeEchoAccess(reverseGraph, context, "family", [grant]);
-    expect(authorization.relationshipVerified).toBe(false);
+    expect(authorization.relationshipVerified).toBe(true);
+    expect(canAccessMemory(memory, authorization).allowed).toBe(true);
   });
   it("blocks another subject", () => {
     const authorization = authorizeEchoAccess(graph, context, "family", [grant]);
