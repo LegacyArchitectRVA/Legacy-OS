@@ -19,6 +19,16 @@ export interface EchoAccessDecision {
   reason: "authorized" | "subject-mismatch" | "relationship-unverified" | ConsentFailure | "visibility-restricted";
 }
 
+function relationshipVerified(graph: MemoryGraph, viewerPersonId: string, subjectPersonId: string): boolean {
+  if (viewerPersonId === subjectPersonId) return true;
+  return graph.relationships.some(
+    (relationship) =>
+      relationship.confidence >= 0.8 &&
+      ((relationship.fromPersonId === viewerPersonId && relationship.toPersonId === subjectPersonId) ||
+        (relationship.fromPersonId === subjectPersonId && relationship.toPersonId === viewerPersonId)),
+  );
+}
+
 export function authorizeEchoAccess(
   graph: MemoryGraph,
   context: MemoryQueryContext,
@@ -27,11 +37,7 @@ export function authorizeEchoAccess(
   now = new Date(),
 ): EchoAuthorization {
   const viewerIsSubject = context.viewerPersonId === context.subjectPersonId;
-  const relationshipVerified = viewerIsSubject || graph.relationships.some(
-    relationship => relationship.fromPersonId === context.viewerPersonId &&
-      relationship.toPersonId === context.subjectPersonId &&
-      relationship.confidence >= 0.8,
-  );
+  const relationshipIsVerified = relationshipVerified(graph, context.viewerPersonId, context.subjectPersonId);
   const consent = viewerIsSubject
     ? { allowed: true, reason: "granted" as const }
     : evaluateConsent(grants, context.subjectPersonId, "memory", allowedVisibility, now);
@@ -40,7 +46,7 @@ export function authorizeEchoAccess(
     viewerPersonId: context.viewerPersonId,
     subjectPersonId: context.subjectPersonId,
     allowedVisibility,
-    relationshipVerified,
+    relationshipVerified: relationshipIsVerified,
     consentVerified: consent.allowed,
     consentFailure: consent.allowed
       ? undefined
@@ -48,9 +54,7 @@ export function authorizeEchoAccess(
         ? "consent-expired"
         : consent.reason === "revoked"
           ? "consent-revoked"
-          : consent.reason === "visibility-restricted"
-            ? "consent-missing"
-            : "consent-missing",
+          : "consent-missing",
   };
 }
 
