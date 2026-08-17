@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type Mode = "original" | "merge" | "restore" | "holographic";
 
@@ -14,10 +14,9 @@ const modes: { id: Mode; label: string; detail: string }[] = [
 export default function VisualRecallPanel() {
   const [mode, setMode] = useState<Mode>("original");
   const [reconstructionAvailable, setReconstructionAvailable] = useState(false);
-
-  const selected = useMemo(() => modes.find((item) => item.id === mode)!, [mode]);
   const reconstructionMode = mode === "restore" || mode === "merge" || mode === "holographic";
   const displayedMode = reconstructionMode && !reconstructionAvailable ? "original" : mode;
+  const displayedLabel = modes.find((item) => item.id === displayedMode)?.label ?? "Original";
 
   return (
     <section className="rounded-2xl border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur">
@@ -57,7 +56,7 @@ export default function VisualRecallPanel() {
       <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex items-center justify-between">
           <span className="text-sm text-white/50">Current presentation</span>
-          <span className="font-medium text-cyan-200">{modes.find((item) => item.id === displayedMode)?.label}</span>
+          <span className="font-medium text-cyan-200">{displayedLabel}</span>
         </div>
         <div className="mt-4 flex aspect-video items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-cyan-950/40 to-slate-950">
           {displayedMode === "holographic" ? (
@@ -68,7 +67,7 @@ export default function VisualRecallPanel() {
           ) : (
             <div className="text-center">
               <div className="mx-auto h-20 w-28 rounded-lg border border-white/15 bg-white/5" />
-              <p className="mt-4 text-sm text-white/60">{modes.find((item) => item.id === displayedMode)?.label} media view</p>
+              <p className="mt-4 text-sm text-white/60">{displayedLabel} media view</p>
             </div>
           )}
         </div>
