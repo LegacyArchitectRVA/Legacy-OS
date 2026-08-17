@@ -58,6 +58,15 @@ export function authorizeEchoAccess(
   };
 }
 
+/**
+ * Information access is independent from reconstruction access.
+ * A caller may use this decision to present documented information even when
+ * voice/avatar/scene reconstruction is unavailable or unauthorized.
+ */
+export function canAccessInformation(memory: Memory, authorization: EchoAuthorization): EchoAccessDecision {
+  return canAccessMemory(memory, authorization);
+}
+
 export function canAccessMemory(memory: Memory, authorization: EchoAuthorization): EchoAccessDecision {
   if (memory.subjectPersonId !== authorization.subjectPersonId) return { allowed: false, reason: "subject-mismatch" };
   if (!authorization.relationshipVerified) return { allowed: false, reason: "relationship-unverified" };
