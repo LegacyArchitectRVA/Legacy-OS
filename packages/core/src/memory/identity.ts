@@ -23,9 +23,9 @@ const relationshipAliases: Record<string, string[]> = {
   father: ["dad", "daddy", "papa", "papi", "pop", "pops", "pa", "father"],
   mother: ["mom", "momma", "mama", "mommy", "mum", "mummy", "ma", "mother"],
   sister: ["sis", "sissy", "sister"],
-  brother: ["bro", "brother", "brother"],
+  brother: ["bro", "brother"],
   grandmother: ["grandma", "grandmom", "grandmother", "granny", "nana", "nan", "meemaw", "mamaw", "mammaw", "gramma", "grammy", "gran"],
-  grandfather: ["grandpa", "granddad", "granddad", "grandfather", "grampy", "gramps", "papa", "papaw", "pawpaw", "grandpappy", "grandad", "grandpa"],
+  grandfather: ["grandpa", "granddad", "grandfather", "grampy", "gramps", "papaw", "pawpaw", "grandpappy", "grandad"],
   daughter: ["daughter", "girl", "baby girl"],
   son: ["son", "boy", "baby boy"],
   wife: ["wife", "wifey", "missus", "mrs"],
@@ -45,12 +45,11 @@ function canonicalRelationship(value: string): string {
 
 function personNames(person: MemoryPerson): string[] {
   const values = [person.displayName, ...person.relationshipLabels];
-  const expanded = values.flatMap((value) => {
+  return values.flatMap((value) => {
     const normalized = normalize(value);
     const canonical = canonicalRelationship(normalized);
     return [normalized, canonical, ...(relationshipAliases[canonical] ?? [])];
-  });
-  return expanded.map(normalize).filter(Boolean);
+  }).map(normalize).filter(Boolean);
 }
 
 /** Conservative identity matching. Weak evidence never creates an identity match. */
@@ -61,20 +60,25 @@ export function matchIdentity(
   const value = normalize(observation.value);
   if (!value || observation.confidence < 0.8) return [];
 
+  // The current MemoryPerson schema has no email, phone, or handle fields.
+  // Never pretend those identifiers matched a person through a display name.
+  if (observation.type === "email" || observation.type === "phone" || observation.type === "handle") {
+    return [];
+  }
+
   return graph.people
     .map((person) => {
       if (!personNames(person).some((name) => name === value)) return null;
-      const reasons = ["exact-normalized-name"];
-      if (person.relationshipLabels.some((label) => {
+      const relationshipAlias = person.relationshipLabels.some((label) => {
         const aliases = relationshipAliases[canonicalRelationship(label)] ?? [];
         return aliases.map(normalize).includes(value);
-      })) {
-        reasons.push("relationship-alias");
-      }
+      });
       return {
         personId: person.id,
         score: Math.min(1, observation.confidence),
-        reasons,
+        reasons: relationshipAlias
+          ? ["exact-normalized-name", "relationship-alias"]
+          : ["exact-normalized-name"],
       };
     })
     .filter((match): match is IdentityMatch => match !== null)
