@@ -32,13 +32,23 @@ export interface EchoExperiencePlan {
   segments: ReconstructionSegment[];
 }
 
-function isActiveConsent(consent: ReconstructionConsent, now: Date): boolean {
-  if (!consent.enabled || !consent.grantedBy || !consent.grantedAt) return false;
+export interface ReconstructionAuthorization {
+  allowed: boolean;
+  reason: "authorized" | "consent-missing" | "consent-expired" | "consent-future" | "consent-invalid" | "scope-restricted" | "evidence-missing" | "subject-mismatch";
+}
+
+function consentStatus(consent: ReconstructionConsent, now: Date): ReconstructionAuthorization {
+  if (!consent.enabled) return { allowed: false, reason: "consent-missing" };
+  if (!consent.grantedBy) return { allowed: false, reason: "consent-invalid" };
   const grantedAt = Date.parse(consent.grantedAt);
-  if (!Number.isFinite(grantedAt) || grantedAt > now.getTime()) return false;
-  if (!consent.expiresAt) return true;
+  if (!Number.isFinite(grantedAt)) return { allowed: false, reason: "consent-invalid" };
+  if (grantedAt > now.getTime()) return { allowed: false, reason: "consent-future" };
+  if (!consent.expiresAt) return { allowed: true, reason: "authorized" };
   const expiresAt = Date.parse(consent.expiresAt);
-  return Number.isFinite(expiresAt) && now.getTime() < expiresAt;
+  if (!Number.isFinite(expiresAt)) return { allowed: false, reason: "consent-invalid" };
+  return now.getTime() < expiresAt
+    ? { allowed: true, reason: "authorized" }
+    : { allowed: false, reason: "consent-expired" };
 }
 
 export function createReconstructionSegment(input: Omit<ReconstructionSegment, "generated">): ReconstructionSegment {
@@ -48,19 +58,39 @@ export function createReconstructionSegment(input: Omit<ReconstructionSegment, "
   return { ...input, generated: true };
 }
 
+/**
+ * Evaluate reconstruction independently from information access.
+ * A denied reconstruction should cause the caller to fall back to the
+ * separately authorized documented information path, not suppress the memory.
+ */
+export function evaluateExperiencePlanAuthorization(
+  plan: EchoExperiencePlan,
+  consent: ReconstructionConsent,
+  now = new Date(),
+): ReconstructionAuthorization {
+  if (!plan.subjectPersonId || plan.segments.some((segment) => segment.subjectPersonId !== plan.subjectPersonId)) {
+    return { allowed: false, reason: "subject-mismatch" };
+  }
+
+  const status = consentStatus(consent, now);
+  if (!status.allowed) return status;
+
+  for (const segment of plan.segments) {
+    if (segment.sourceIds.length === 0) return { allowed: false, reason: "evidence-missing" };
+    if (!consent.scope.includes(segment.kind)) return { allowed: false, reason: "scope-restricted" };
+  }
+
+  return { allowed: true, reason: "authorized" };
+}
+
 export function authorizeExperiencePlan(
   plan: EchoExperiencePlan,
   consent: ReconstructionConsent,
   now = new Date(),
 ): EchoExperiencePlan {
-  if (!isActiveConsent(consent, now)) throw new Error("Reconstruction consent is not active");
-  for (const segment of plan.segments) {
-    if (!consent.scope.includes(segment.kind)) {
-      throw new Error(`Reconstruction consent does not cover ${segment.kind}`);
-    }
-    if (segment.sourceIds.length === 0) {
-      throw new Error(`Reconstruction segment ${segment.id} has no source evidence`);
-    }
+  const authorization = evaluateExperiencePlanAuthorization(plan, consent, now);
+  if (!authorization.allowed) {
+    throw new Error(`Reconstruction authorization denied: ${authorization.reason}`);
   }
   return plan;
 }
