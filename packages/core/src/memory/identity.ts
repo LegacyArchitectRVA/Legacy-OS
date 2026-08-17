@@ -17,8 +17,40 @@ function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9@+]+/g, " ").replace(/\s+/g, " ");
 }
 
+// Common family forms are aliases, not fuzzy identity matches. They are only
+// expanded when the person's relationship label establishes the relationship.
+const relationshipAliases: Record<string, string[]> = {
+  father: ["dad", "daddy", "papa", "papi", "pop", "pops", "pa", "father"],
+  mother: ["mom", "momma", "mama", "mommy", "mum", "mummy", "ma", "mother"],
+  sister: ["sis", "sissy", "sister"],
+  brother: ["bro", "brother", "brother"],
+  grandmother: ["grandma", "grandmom", "grandmother", "granny", "nana", "nan", "meemaw", "mamaw", "mammaw", "gramma", "grammy", "gran"],
+  grandfather: ["grandpa", "granddad", "granddad", "grandfather", "grampy", "gramps", "papa", "papaw", "pawpaw", "grandpappy", "grandad", "grandpa"],
+  daughter: ["daughter", "girl", "baby girl"],
+  son: ["son", "boy", "baby boy"],
+  wife: ["wife", "wifey", "missus", "mrs"],
+  husband: ["husband", "hubby", "hubs", "mr"],
+  aunt: ["aunt", "auntie", "aunty"],
+  uncle: ["uncle", "unk", "unc"],
+  cousin: ["cousin", "cuz", "cous"],
+};
+
+function canonicalRelationship(value: string): string {
+  const normalized = normalize(value);
+  for (const [canonical, aliases] of Object.entries(relationshipAliases)) {
+    if (aliases.map(normalize).includes(normalized)) return canonical;
+  }
+  return normalized;
+}
+
 function personNames(person: MemoryPerson): string[] {
-  return [person.displayName, ...person.relationshipLabels].map(normalize).filter(Boolean);
+  const values = [person.displayName, ...person.relationshipLabels];
+  const expanded = values.flatMap((value) => {
+    const normalized = normalize(value);
+    const canonical = canonicalRelationship(normalized);
+    return [normalized, canonical, ...(relationshipAliases[canonical] ?? [])];
+  });
+  return expanded.map(normalize).filter(Boolean);
 }
 
 /** Conservative identity matching. Weak evidence never creates an identity match. */
@@ -32,10 +64,17 @@ export function matchIdentity(
   return graph.people
     .map((person) => {
       if (!personNames(person).some((name) => name === value)) return null;
+      const reasons = ["exact-normalized-name"];
+      if (person.relationshipLabels.some((label) => {
+        const aliases = relationshipAliases[canonicalRelationship(label)] ?? [];
+        return aliases.map(normalize).includes(value);
+      })) {
+        reasons.push("relationship-alias");
+      }
       return {
         personId: person.id,
         score: Math.min(1, observation.confidence),
-        reasons: ["exact-normalized-name"],
+        reasons,
       };
     })
     .filter((match): match is IdentityMatch => match !== null)
