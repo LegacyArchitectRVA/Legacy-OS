@@ -3,7 +3,7 @@ import type { Memory, MemoryGraph, MemoryQueryContext, MemoryVisibility } from "
 
 const VISIBILITY_ORDER: Record<MemoryVisibility, number> = { private: 0, trusted: 1, family: 2, successor: 3 };
 
-type ConsentFailure = "consent-missing" | "consent-expired" | "consent-revoked";
+type ConsentFailure = "consent-missing" | "consent-expired" | "consent-revoked" | "visibility-restricted";
 
 export interface EchoAuthorization {
   viewerPersonId: string;
@@ -54,7 +54,9 @@ export function authorizeEchoAccess(
         ? "consent-expired"
         : consent.reason === "revoked"
           ? "consent-revoked"
-          : "consent-missing",
+          : consent.reason === "visibility-restricted"
+            ? "visibility-restricted"
+            : "consent-missing",
   };
 }
 
