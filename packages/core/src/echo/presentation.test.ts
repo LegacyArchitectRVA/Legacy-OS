@@ -89,6 +89,22 @@ describe("Echo presentation", () => {
     expect(decision.mode).toBe("reconstructed");
   });
 
+  it("falls back to documented information when a reconstruction plan belongs to another viewer", () => {
+    const authorization = authorizeEchoAccess(graph, context, "family", [memoryGrant], new Date("2026-08-09T00:00:00Z"));
+    const otherViewerPlan = createExperiencePlan("dad", "momma", memory.id, ["photo:fishing"]);
+    const decision = decideEchoPresentation(
+      memory,
+      authorization,
+      otherViewerPlan,
+      reconstructionConsent,
+      new Date("2026-08-09T00:00:00Z"),
+    );
+
+    expect(decision.informationAllowed).toBe(true);
+    expect(decision.reconstruction.allowed).toBe(false);
+    expect(decision.mode).toBe("documented");
+  });
+
   it("denies the presentation when the underlying information is unauthorized", () => {
     const authorization = authorizeEchoAccess(graph, context, "family", []);
     const decision = decideEchoPresentation(
