@@ -1,3 +1,4 @@
+import HolographicRecallViewer from "./components/HolographicRecallViewer";
 import VisualRecallPanel from "./components/VisualRecallPanel";
 
 export default function Home() {
@@ -23,8 +24,9 @@ export default function Home() {
           ))}
         </section>
 
-        <div className="mt-8">
+        <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <VisualRecallPanel />
+          <HolographicRecallViewer mediaKind="scene" />
         </div>
       </div>
     </main>
