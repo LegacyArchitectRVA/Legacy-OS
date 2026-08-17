@@ -32,16 +32,28 @@ export interface EchoExperiencePlan {
   segments: ReconstructionSegment[];
 }
 
+function isActiveConsent(consent: ReconstructionConsent, now: Date): boolean {
+  if (!consent.enabled || !consent.grantedBy || !consent.grantedAt) return false;
+  const grantedAt = Date.parse(consent.grantedAt);
+  if (!Number.isFinite(grantedAt) || grantedAt > now.getTime()) return false;
+  if (!consent.expiresAt) return true;
+  const expiresAt = Date.parse(consent.expiresAt);
+  return Number.isFinite(expiresAt) && now.getTime() < expiresAt;
+}
+
 export function createReconstructionSegment(input: Omit<ReconstructionSegment, "generated">): ReconstructionSegment {
+  if (!input.subjectPersonId) throw new Error("Reconstruction requires a subject person");
   if (input.sourceIds.length === 0) throw new Error("Reconstruction requires source evidence");
+  if (input.confidence < 0 || input.confidence > 1) throw new Error("Reconstruction confidence must be between 0 and 1");
   return { ...input, generated: true };
 }
 
 export function authorizeExperiencePlan(
   plan: EchoExperiencePlan,
   consent: ReconstructionConsent,
+  now = new Date(),
 ): EchoExperiencePlan {
-  if (!consent.enabled) throw new Error("Reconstruction consent is not enabled");
+  if (!isActiveConsent(consent, now)) throw new Error("Reconstruction consent is not active");
   for (const segment of plan.segments) {
     if (!consent.scope.includes(segment.kind)) {
       throw new Error(`Reconstruction consent does not cover ${segment.kind}`);
@@ -70,7 +82,7 @@ export function createExperiencePlan(
         subjectPersonId,
         knowledgeState: "reconstructed",
         confidence: 0,
-        sourceIds,
+        sourceIds: [...new Set(sourceIds)],
         consentScope: "reconstruction",
       }),
     ],
