@@ -43,3 +43,12 @@ export function nearestHistoricalSnapshot(
     undefined,
   );
 }
+
+export function addHistoricalProviderSnapshot(
+  timeline: VisualTimeline,
+  snapshot: HistoricalVisualSnapshot,
+): VisualTimeline {
+  if (snapshot.assetId !== timeline.assetId) return timeline;
+  if (timeline.snapshots.some((item) => item.id === snapshot.id)) return timeline;
+  return { ...timeline, snapshots: [...timeline.snapshots, snapshot] };
+}
