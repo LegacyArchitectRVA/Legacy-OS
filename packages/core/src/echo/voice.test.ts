@@ -11,12 +11,12 @@ describe("voice reconstruction", () => {
     disclosure: "reconstructed" as const,
   };
 
-  it("requires explicit voice consent", () => {
+  it("requires active voice consent", () => {
     expect(() => authorizeVoice(segment, {
       enabled: false,
       grantedBy: "child",
       grantedAt: "2026-08-11T00:00:00Z",
-    })).toThrow("Voice reconstruction consent is not enabled");
+    })).toThrow("Voice reconstruction consent is not active");
   });
 
   it("requires evidence", () => {
@@ -25,5 +25,14 @@ describe("voice reconstruction", () => {
       grantedBy: "child",
       grantedAt: "2026-08-11T00:00:00Z",
     })).toThrow("requires source evidence");
+  });
+
+  it("rejects expired voice consent", () => {
+    expect(() => authorizeVoice(segment, {
+      enabled: true,
+      grantedBy: "child",
+      grantedAt: "2026-08-11T00:00:00Z",
+      expiresAt: "2026-08-12T00:00:00Z",
+    }, new Date("2026-08-12T00:00:01Z"))).toThrow("consent is not active");
   });
 });
