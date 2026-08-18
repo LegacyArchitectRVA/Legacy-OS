@@ -25,7 +25,7 @@ export default function HolographicRecallViewer({
     <section className="overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-950 shadow-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Echo Recall Viewer</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Legacy Recall Viewer</p>
           <p className="mt-1 text-sm text-white/60">{mediaKind} · {effectiveMode}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -53,13 +53,13 @@ export default function HolographicRecallViewer({
             <div className="absolute bottom-5 left-0 right-0 text-center text-xs text-cyan-100/70">Authorized reconstruction presentation</div>
           </div>
         ) : sourceUri ? (
-          mediaKind === "video" ? <video src={sourceUri} controls className="h-full w-full object-contain" /> : <img src={sourceUri} alt="Echo recalled media" className="h-full w-full object-contain" />
+          mediaKind === "video" ? <video src={sourceUri} controls className="h-full w-full object-contain" /> : <img src={sourceUri} alt="Legacy Recall source media" className="h-full w-full object-contain" />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-white/40">No source media supplied</div>
         )}
       </div>
 
-      {mode !== effectiveMode && <p className="border-t border-amber-300/10 bg-amber-300/5 px-4 py-3 text-xs text-amber-100/70">Reconstruction isn't currently available. Echo is showing the authorized original instead.</p>}
+      {mode !== effectiveMode && <p className="border-t border-amber-300/10 bg-amber-300/5 px-4 py-3 text-xs text-amber-100/70">Reconstruction isn't currently available. Recall is showing the authorized original instead.</p>}
     </section>
   );
 }
