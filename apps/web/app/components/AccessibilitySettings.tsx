@@ -1,23 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "legacyos:accessibility:colorblind-mode";
 
+function getSnapshot() {
+  return typeof window !== "undefined" && window.localStorage.getItem(STORAGE_KEY) === "true";
+}
+
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
 export default function AccessibilitySettings() {
-  const [enabled, setEnabled] = useState(false);
+  const enabled = useSyncExternalStore(subscribe, getSnapshot, () => false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY) === "true";
-    setEnabled(saved);
-    document.documentElement.dataset.colorblind = saved ? "true" : "false";
-  }, []);
+    document.documentElement.dataset.colorblind = enabled ? "true" : "false";
+  }, [enabled]);
 
   function toggle() {
     const next = !enabled;
-    setEnabled(next);
     window.localStorage.setItem(STORAGE_KEY, String(next));
-    document.documentElement.dataset.colorblind = next ? "true" : "false";
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY, newValue: String(next) }));
   }
 
   return (
@@ -28,14 +34,7 @@ export default function AccessibilitySettings() {
           <h2 id="accessibility-heading" className="mt-1 text-lg font-semibold text-white">Accessibility</h2>
           <p className="mt-1 text-sm text-white/50">Adjust visual presentation without changing your saved legacy information.</p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label="Enable colorblind mode"
-          onClick={toggle}
-          className={`relative h-7 w-12 shrink-0 rounded-full border transition ${enabled ? "border-cyan-300/60 bg-cyan-300/30" : "border-white/15 bg-white/10"}`}
-        >
+        <button type="button" role="switch" aria-checked={enabled} aria-label="Enable colorblind mode" onClick={toggle} className={`relative h-7 w-12 shrink-0 rounded-full border transition ${enabled ? "border-cyan-300/60 bg-cyan-300/30" : "border-white/15 bg-white/10"}`}>
           <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${enabled ? "left-6" : "left-1"}`} />
         </button>
       </div>
@@ -47,12 +46,7 @@ export default function AccessibilitySettings() {
         <span className="text-xs font-medium text-white/50">{enabled ? "On" : "Off"}</span>
       </div>
       <style jsx global>{`
-        :root[data-colorblind="true"] {
-          --cb-accent: #00b8d9;
-          --cb-success: #007a5e;
-          --cb-warning: #f2a900;
-          --cb-danger: #d55e00;
-        }
+        :root[data-colorblind="true"] { --cb-accent: #00b8d9; --cb-success: #007a5e; --cb-warning: #f2a900; --cb-danger: #d55e00; }
         :root[data-colorblind="true"] [class*="text-red-"] { color: var(--cb-danger) !important; }
         :root[data-colorblind="true"] [class*="text-green-"] { color: var(--cb-success) !important; }
         :root[data-colorblind="true"] [class*="text-yellow-"] { color: var(--cb-warning) !important; }
