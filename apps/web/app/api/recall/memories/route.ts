@@ -9,6 +9,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "context must be personal, family, or business." }, { status: 400 });
   }
 
-  const context: RecallContext | undefined = rawContext === null ? undefined : rawContext;
+  const context: RecallContext | undefined = rawContext === null ? undefined : (rawContext as RecallContext);
   return NextResponse.json({ memories: listRecallMemories(context) });
 }
