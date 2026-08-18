@@ -9,7 +9,7 @@ export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommended,
   {
-    files: ["**/*.mjs"],
+    files: ["scripts/**/*.mjs"],
     languageOptions: {
       globals: {
         URL: "readonly",
