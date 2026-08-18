@@ -2,7 +2,7 @@
   "name": "legacy-os",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-powered business continuity operating system for Order in Your Absence.",
+  "description": "AI-powered continuity operating system for life, family, and business.",
   "workspaces": ["apps/*", "packages/*"],
   "packageManager": "npm@10.9.8",
   "engines": { "node": ">=22.0.0" },
