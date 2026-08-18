@@ -79,3 +79,5 @@ LegacyOS is not only a business continuity system and not only a memory product.
 ## Status
 
 Foundation phase.
+
+CI validation: lint, typecheck, tests, and production build are required on every main-branch change.
