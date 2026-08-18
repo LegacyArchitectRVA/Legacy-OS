@@ -58,18 +58,18 @@ export default function AccessibilitySettings() {
         <Toggle label="Colorblind mode" description="Uses color-safe contrast and non-color cues." checked={colorblind} onChange={(value) => set(COLORBLIND_KEY, value)} />
         <label className="block rounded-xl border border-white/10 bg-black/20 px-4 py-3">
           <span className="text-sm font-medium text-white">Color vision profile</span>
-          <select value={profile} disabled={!colorblind} onChange={(event) => set(PROFILE_KEY, event.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-sm text-white disabled:opacity-40">
+          <select aria-label="Color vision profile" value={profile} disabled={!colorblind} onChange={(event) => set(PROFILE_KEY, event.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-sm text-white disabled:opacity-40">
             <option value="general">General color-safe mode</option>
             <option value="protanopia">Protanopia / red-weak</option>
             <option value="deuteranopia">Deuteranopia / green-weak</option>
             <option value="tritanopia">Tritanopia / blue-weak</option>
           </select>
         </label>
-        <Toggle label="Reduced motion" description="Reduces interface animation and transition effects." checked={reducedMotion} onChange={(value) => set(MOTION_KEY, value)} />
+        <Toggle label="Reduced motion" description="Respects a calmer interface with minimal animation." checked={reducedMotion} onChange={(value) => set(MOTION_KEY, value)} />
         <Toggle label="High contrast" description="Strengthens text, borders, controls, and focus indicators." checked={highContrast} onChange={(value) => set(CONTRAST_KEY, value)} />
         <label className="block rounded-xl border border-white/10 bg-black/20 px-4 py-3">
           <span className="text-sm font-medium text-white">Text size</span>
-          <select value={textScale} onChange={(event) => set(SCALE_KEY, event.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-sm text-white">
+          <select aria-label="Text size" value={textScale} onChange={(event) => set(SCALE_KEY, event.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-sm text-white">
             <option value="100">100% Default</option><option value="110">110%</option><option value="125">125%</option><option value="150">150%</option>
           </select>
         </label>
@@ -77,12 +77,15 @@ export default function AccessibilitySettings() {
 
       <style jsx global>{`
         :root { --legacyos-text-scale: 1; }
+        body { font-size: calc(1rem * var(--legacyos-text-scale)); }
         :root[data-reduced-motion="true"] *, :root[data-reduced-motion="true"] *::before, :root[data-reduced-motion="true"] *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
-        :root[data-high-contrast="true"] { --legacyos-contrast-border: rgba(255,255,255,.38); }
         :root[data-high-contrast="true"] * { text-shadow: none !important; }
         :root[data-high-contrast="true"] button, :root[data-high-contrast="true"] select, :root[data-high-contrast="true"] input, :root[data-high-contrast="true"] textarea { outline-offset: 3px; }
         :root[data-high-contrast="true"] button:focus-visible, :root[data-high-contrast="true"] select:focus-visible, :root[data-high-contrast="true"] input:focus-visible, :root[data-high-contrast="true"] textarea:focus-visible { outline: 3px solid #00b8d9 !important; }
         :root[data-colorblind="true"] { --cb-accent: #0072b2; --cb-success: #009e73; --cb-warning: #e69f00; --cb-danger: #d55e00; }
+        :root[data-colorblind="true"][data-colorblind-profile="protanopia"] { --cb-success: #0072b2; --cb-danger: #cc79a7; --cb-warning: #e69f00; }
+        :root[data-colorblind="true"][data-colorblind-profile="deuteranopia"] { --cb-success: #0072b2; --cb-danger: #cc79a7; --cb-warning: #e69f00; }
+        :root[data-colorblind="true"][data-colorblind-profile="tritanopia"] { --cb-accent: #d55e00; --cb-success: #009e73; --cb-danger: #cc79a7; --cb-warning: #e69f00; }
         :root[data-colorblind="true"] [class*="text-red-"] { color: var(--cb-danger) !important; }
         :root[data-colorblind="true"] [class*="text-green-"] { color: var(--cb-success) !important; }
         :root[data-colorblind="true"] [class*="text-yellow-"], :root[data-colorblind="true"] [class*="text-amber-"] { color: var(--cb-warning) !important; }
