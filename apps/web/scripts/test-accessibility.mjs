@@ -1,3 +1,4 @@
+/* eslint-env node */
 import { readFile } from "node:fs/promises";
 
 const file = new URL("../app/components/AccessibilitySettings.tsx", import.meta.url);
