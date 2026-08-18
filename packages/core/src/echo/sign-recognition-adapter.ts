@@ -12,7 +12,7 @@ export function normalizeSignRecognitionResult(
   result: SignRecognitionResult,
   threshold = SIGN_RECOGNITION_CONFIDENCE_THRESHOLD,
 ): SignRecognitionResult {
-  if (!result.recognized || result.confidence < threshold) {
+  if (!result.recognized || result.confidence < threshold || !result.transcript?.trim()) {
     return {
       ...result,
       recognized: false,
@@ -20,8 +20,23 @@ export function normalizeSignRecognitionResult(
       reason: result.reason === "information-denied" ? result.reason : "recognition-unavailable",
     };
   }
-
   return result;
+}
+
+export async function runSignRecognition(
+  adapter: SignRecognitionAdapter,
+  request: SignRecognitionRequest,
+  threshold = SIGN_RECOGNITION_CONFIDENCE_THRESHOLD,
+): Promise<SignRecognitionResult> {
+  if (!request.informationAuthorized || !adapter.supportedLanguages.includes(request.language)) {
+    return {
+      language: request.language,
+      recognized: false,
+      confidence: 0,
+      reason: request.informationAuthorized ? "recognition-unavailable" : "information-denied",
+    };
+  }
+  return normalizeSignRecognitionResult(await adapter.recognize(request), threshold);
 }
 
 /** Explicit placeholder adapter until a production multimodal provider is configured. */
