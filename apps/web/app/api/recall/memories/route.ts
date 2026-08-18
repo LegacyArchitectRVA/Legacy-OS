@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { type RecallContext } from "../../../../lib/recall";
+import { isRecallContext, type RecallContext } from "../../../../lib/recall";
 import { getRecallUserId, listRecallMemories } from "../../../../lib/recall-store";
 
 function parseRecallContext(value: string | null): RecallContext | undefined {
   if (value === null) return undefined;
-  if (value === "personal" || value === "family" || value === "business") return value;
-  return undefined;
+  return isRecallContext(value) ? value : undefined;
 }
 
 export async function GET(request: Request) {
   const rawContext = new URL(request.url).searchParams.get("context");
-  const context = parseRecallContext(rawContext);
+  const context: RecallContext | undefined = parseRecallContext(rawContext);
 
   if (rawContext !== null && context === undefined) {
     return NextResponse.json({ error: "context must be personal, family, or business." }, { status: 400 });
