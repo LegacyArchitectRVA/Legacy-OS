@@ -1,5 +1,6 @@
 import HolographicRecallViewer from "./components/HolographicRecallViewer";
 import SignLanguagePanel from "./components/SignLanguagePanel";
+import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
 import VisualRecallPanel from "./components/VisualRecallPanel";
 
 export default function Home() {
@@ -29,6 +30,7 @@ export default function Home() {
           <VisualRecallPanel />
           <HolographicRecallViewer mediaKind="scene" />
           <SignLanguagePanel />
+          <SignVideoVoicePlayer videoUri="" />
         </div>
       </div>
     </main>
