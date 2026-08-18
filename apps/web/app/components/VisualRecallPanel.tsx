@@ -14,7 +14,7 @@ const modes: { id: Mode; label: string; detail: string }[] = [
 export default function VisualRecallPanel() {
   const [mode, setMode] = useState<Mode>("original");
   const [reconstructionAvailable, setReconstructionAvailable] = useState(false);
-  const reconstructionMode = mode === "restore" || mode === "merge" || mode === "holographic";
+  const reconstructionMode = mode !== "original";
   const displayedMode = reconstructionMode && !reconstructionAvailable ? "original" : mode;
   const displayedLabel = modes.find((item) => item.id === displayedMode)?.label ?? "Original";
 
@@ -22,10 +22,10 @@ export default function VisualRecallPanel() {
     <section className="rounded-2xl border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">Echo Visual Recall</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">Legacy Recall · Visual Memory</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">See the memory, choose the view.</h2>
           <p className="mt-2 max-w-2xl text-sm text-white/60">
-            Original media remains available independently from reconstruction. If restoration, merging, or holographic reconstruction is unavailable, Echo falls back to the authorized original.
+            Original evidence remains available independently from reconstruction. If restoration, merging, or holographic reconstruction is unavailable, Recall falls back to the authorized original.
           </p>
         </div>
         <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60">Image / Video / Scene</span>
@@ -62,7 +62,7 @@ export default function VisualRecallPanel() {
           {displayedMode === "holographic" ? (
             <div className="text-center text-cyan-200">
               <div className="mx-auto h-24 w-24 animate-pulse rounded-full border border-cyan-300/60 shadow-[0_0_60px_rgba(103,232,249,.35)]" />
-              <p className="mt-4 text-sm">Holographic reconstruction</p>
+              <p className="mt-4 text-sm">Authorized holographic reconstruction</p>
             </div>
           ) : (
             <div className="text-center">
