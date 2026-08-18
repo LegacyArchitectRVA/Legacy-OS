@@ -1,3 +1,4 @@
+import AccessibilitySettings from "./components/AccessibilitySettings";
 import HolographicRecallViewer from "./components/HolographicRecallViewer";
 import SignLanguagePanel from "./components/SignLanguagePanel";
 import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
@@ -27,6 +28,7 @@ export default function Home() {
         </section>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
+          <AccessibilitySettings />
           <VisualRecallPanel />
           <HolographicRecallViewer mediaKind="scene" />
           <SignLanguagePanel />
