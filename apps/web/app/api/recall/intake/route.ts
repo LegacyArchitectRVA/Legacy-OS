@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isEvidenceClass, isRecallContext, normalizeRecallMemory, type RecallMemoryInput } from "../../../../lib/recall";
-import { saveRecallMemory } from "../../../../lib/recall-store";
+import { getRecallUserId, saveRecallMemory } from "../../../../lib/recall-store";
 
 export async function POST(request: Request) {
   let body: Partial<RecallMemoryInput>;
@@ -18,7 +18,15 @@ export async function POST(request: Request) {
   if (body.people !== undefined && (!Array.isArray(body.people) || body.people.some((value) => typeof value !== "string"))) return NextResponse.json({ error: "people must be an array of strings." }, { status: 400 });
   if (body.sourceRefs !== undefined && (!Array.isArray(body.sourceRefs) || body.sourceRefs.some((value) => typeof value !== "string"))) return NextResponse.json({ error: "sourceRefs must be an array of strings." }, { status: 400 });
 
-  const memory = saveRecallMemory(normalizeRecallMemory(body as RecallMemoryInput));
+  const userId = await getRecallUserId();
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) {
+    return NextResponse.json({ error: "Authentication is required to save Recall memories." }, { status: 401 });
+  }
 
-  return NextResponse.json({ accepted: true, durableStorage: true, memory }, { status: 201 });
+  try {
+    const memory = await saveRecallMemory(normalizeRecallMemory(body as RecallMemoryInput), userId);
+    return NextResponse.json({ accepted: true, durableStorage: Boolean(userId), memory }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to save Recall memory." }, { status: 500 });
+  }
 }
