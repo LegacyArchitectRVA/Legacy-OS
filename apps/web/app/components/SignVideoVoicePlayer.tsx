@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SignVideoVoicePlayerProps {
   videoUri: string;
@@ -11,6 +11,7 @@ interface SignVideoVoicePlayerProps {
 export default function SignVideoVoicePlayer({ videoUri, audioUri, transcript }: SignVideoVoicePlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioReady, setAudioReady] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -20,9 +21,9 @@ export default function SignVideoVoicePlayer({ videoUri, audioUri, transcript }:
     const sync = () => {
       if (Math.abs(audio.currentTime - video.currentTime) > 0.08) audio.currentTime = video.currentTime;
       if (video.paused) audio.pause();
-      else void audio.play().catch(() => undefined);
+      else if (audioReady) void audio.play().catch(() => undefined);
     };
-    const play = () => void audio.play().catch(() => undefined);
+    const play = () => { if (audioReady) void audio.play().catch(() => undefined); };
     const pause = () => audio.pause();
     const seek = () => { audio.currentTime = video.currentTime; };
     const end = () => audio.pause();
@@ -39,21 +40,27 @@ export default function SignVideoVoicePlayer({ videoUri, audioUri, transcript }:
       video.removeEventListener("seeking", seek);
       video.removeEventListener("ended", end);
     };
-  }, [audioUri]);
+  }, [audioUri, audioReady]);
+
+  function handleAudioReady() {
+    setAudioReady(true);
+    if (audioRef.current && videoRef.current) audioRef.current.currentTime = videoRef.current.currentTime;
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-950 shadow-2xl">
       <div className="relative aspect-video bg-black">
         <video ref={videoRef} src={videoUri} controls playsInline className="h-full w-full" aria-label="Signed video with optional voice-over" />
-        {audioUri && <audio ref={audioRef} src={audioUri} preload="auto" />}
+        {audioUri && <audio ref={audioRef} src={audioUri} preload="auto" onCanPlay={handleAudioReady} />}
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Sign + Voice</p>
-          <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-white/50">{audioUri ? "Synchronized" : "Original only"}</span>
+          <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-white/50">{audioUri && audioReady ? "Synchronized" : "Original only"}</span>
         </div>
         {transcript && <p className="mt-3 text-sm leading-6 text-white/65">{transcript}</p>}
         {!audioUri && <p className="mt-2 text-xs text-white/35">A verified transcript and generated voice track are required before voice playback is enabled.</p>}
+        {audioUri && !audioReady && <p className="mt-2 text-xs text-white/35">Loading the generated voice track...</p>}
       </div>
     </section>
   );
