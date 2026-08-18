@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
-import { isRecallContext, type RecallContext } from "../../../../lib/recall";
+import { type RecallContext } from "../../../../lib/recall";
 import { getRecallUserId, listRecallMemories } from "../../../../lib/recall-store";
+
+function parseRecallContext(value: string | null): RecallContext | undefined {
+  if (value === null) return undefined;
+  if (value === "personal" || value === "family" || value === "business") return value;
+  return undefined;
+}
 
 export async function GET(request: Request) {
   const rawContext = new URL(request.url).searchParams.get("context");
-  if (rawContext !== null && !isRecallContext(rawContext)) {
+  const context = parseRecallContext(rawContext);
+
+  if (rawContext !== null && context === undefined) {
     return NextResponse.json({ error: "context must be personal, family, or business." }, { status: 400 });
   }
 
-  const context: RecallContext | undefined = rawContext === null ? undefined : rawContext;
   const userId = await getRecallUserId();
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) {
     return NextResponse.json({ error: "Authentication is required to retrieve Recall memories." }, { status: 401 });
