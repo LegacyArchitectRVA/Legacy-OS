@@ -13,31 +13,24 @@ export async function getRecallUserId() {
 
 export async function saveRecallMemory(memory: RecallMemoryRecord, userId?: string | null): Promise<RecallMemoryRecord> {
   const supabase = getSupabaseServerClient();
+  if (supabase && !userId) throw new Error("Authentication is required for persistent Recall storage.");
 
   if (supabase && userId) {
-    const { data, error } = await supabase
-      .from("legacy_recall_memories")
-      .insert({
-        user_id: userId,
-        context: memory.context,
-        title: memory.title,
-        narrative: memory.narrative,
-        occurred_at: memory.occurredAt ?? null,
-        people: memory.people ?? [],
-        source_refs: memory.sourceRefs ?? [],
-        evidence_class: memory.evidenceClass,
-        confidence: memory.confidence ?? null,
-        provenance_complete: memory.provenanceComplete,
-      })
-      .select()
-      .single();
+    const { data, error } = await supabase.from("legacy_recall_memories").insert({
+      user_id: userId,
+      context: memory.context,
+      title: memory.title,
+      narrative: memory.narrative,
+      occurred_at: memory.occurredAt ?? null,
+      people: memory.people ?? [],
+      source_refs: memory.sourceRefs ?? [],
+      evidence_class: memory.evidenceClass,
+      confidence: memory.confidence ?? null,
+      provenance_complete: memory.provenanceComplete,
+    }).select().single();
 
     if (error) throw new Error(`Recall persistence failed: ${error.message}`);
-    return {
-      ...memory,
-      id: data.id,
-      createdAt: data.created_at,
-    };
+    return { ...memory, id: data.id, createdAt: data.created_at };
   }
 
   memoryStore.push(memory);
@@ -46,6 +39,7 @@ export async function saveRecallMemory(memory: RecallMemoryRecord, userId?: stri
 
 export async function listRecallMemories(context?: RecallContext, userId?: string | null): Promise<RecallMemoryRecord[]> {
   const supabase = getSupabaseServerClient();
+  if (supabase && !userId) throw new Error("Authentication is required for persistent Recall retrieval.");
 
   if (supabase && userId) {
     let query = supabase.from("legacy_recall_memories").select("*").eq("user_id", userId).order("created_at", { ascending: false });
