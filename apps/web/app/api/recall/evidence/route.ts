@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRecallUserId } from "../../../lib/recall-store";
-import { getRecallMemoryById } from "../../../lib/recall-store";
+import { getRecallUserId, getRecallMemoryById } from "../../../../lib/recall-store";
 
 const evidenceTypes = ["document", "photo", "audio", "video", "link", "note"] as const;
 type EvidenceType = (typeof evidenceTypes)[number];
