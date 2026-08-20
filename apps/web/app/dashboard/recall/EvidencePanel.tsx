@@ -15,7 +15,10 @@ export default function EvidencePanel({ memoryId }: { memoryId: string }) {
     setEvidence(data.evidence ?? []); setStatus("");
   }, [memoryId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const task = Promise.resolve().then(load);
+    return () => { void task.catch(() => undefined); };
+  }, [load]);
 
   async function verify(id: string, verificationStatus: "verified" | "disputed") {
     setStatus("Updating verification…");
