@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
-import { getRecallMemoryById, getRecallUserId } from "../../../../../lib/recall-store";
+import { getRecallUserId } from "../../../../../lib/recall-store";
+import { deleteRecallEvidence, updateRecallEvidence } from "../../../../../lib/recall-evidence-store";
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const userId = await getRecallUserId();
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getRecallUserId(); if (!userId) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   const { id } = await params;
-  const url = new URL(request.url);
-  const memoryId = url.searchParams.get("memoryId")?.trim();
-  if (!memoryId) return NextResponse.json({ error: "memoryId is required." }, { status: 400 });
-  const memory = await getRecallMemoryById(memoryId, userId);
-  if (!memory) return NextResponse.json({ error: "Recall memory not found." }, { status: 404 });
-  return NextResponse.json({ evidence: { id, memoryId } });
+  let body: Record<string, unknown>; try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 }); }
+  if (body.verificationStatus !== undefined && !["unverified", "verified", "disputed"].includes(String(body.verificationStatus))) return NextResponse.json({ error: "Invalid verificationStatus." }, { status: 400 });
+  try {
+    const evidence = await updateRecallEvidence(id, { label: typeof body.label === "string" ? body.label.trim() : undefined, description: typeof body.description === "string" ? body.description.trim() : undefined, capturedAt: typeof body.capturedAt === "string" ? body.capturedAt : undefined, provenance: body.provenance && typeof body.provenance === "object" ? body.provenance as Record<string, unknown> : undefined, verificationStatus: body.verificationStatus as "unverified" | "verified" | "disputed" | undefined }, userId);
+    return evidence ? NextResponse.json({ evidence }) : NextResponse.json({ error: "Recall evidence not found." }, { status: 404 });
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update Recall evidence." }, { status: 500 }); }
+}
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getRecallUserId(); if (!userId) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  const { id } = await params;
+  try { return (await deleteRecallEvidence(id, userId)) ? new NextResponse(null, { status: 204 }) : NextResponse.json({ error: "Recall evidence not found." }, { status: 404 }); }
+  catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to delete Recall evidence." }, { status: 500 }); }
 }
