@@ -5,10 +5,12 @@ import { findRecallConflicts, findRecallRelationships } from "../../../../lib/re
 export async function GET(request: Request) {
   const userId = await getRecallUserId();
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
-  const context = new URL(request.url).searchParams.get("context");
+  const url = new URL(request.url);
+  const context = url.searchParams.get("context");
+  const search = url.searchParams.get("q") ?? undefined;
   try {
-    const memories = await listRecallMemories(context === "personal" || context === "family" || context === "business" ? context : undefined, userId);
-    return NextResponse.json({ relationships: findRecallRelationships(memories), conflicts: findRecallConflicts(memories) });
+    const memories = await listRecallMemories(context === "personal" || context === "family" || context === "business" ? context : undefined, userId, search);
+    return NextResponse.json({ relationships: findRecallRelationships(memories), conflicts: findRecallConflicts(memories), memoryCount: memories.length });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to analyze Recall memories." }, { status: 500 });
   }
