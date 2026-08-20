@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Evidence { id: string; type: string; label: string; uri: string; description?: string | null; verificationStatus: string; capturedAt?: string | null; }
 
@@ -8,14 +8,14 @@ export default function EvidencePanel({ memoryId }: { memoryId: string }) {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [status, setStatus] = useState("Loading evidence…");
 
-  async function load() {
+  const load = useCallback(async () => {
     const response = await fetch(`/api/recall/evidence?memoryId=${encodeURIComponent(memoryId)}`);
     const data = await response.json();
     if (!response.ok) { setStatus(data.error ?? "Unable to load evidence."); return; }
     setEvidence(data.evidence ?? []); setStatus("");
-  }
+  }, [memoryId]);
 
-  useEffect(() => { void load(); }, [memoryId]);
+  useEffect(() => { void load(); }, [load]);
 
   async function verify(id: string, verificationStatus: "verified" | "disputed") {
     setStatus("Updating verification…");
