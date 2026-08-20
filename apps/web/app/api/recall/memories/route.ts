@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { isRecallContext, type RecallContext } from "../../../../lib/recall";
+import { isEvidenceClass, isRecallContext, normalizeRecallMemory, type RecallContext, type RecallMemoryInput } from "../../../../lib/recall";
 import { assessRecallIntelligence } from "../../../../lib/recall-intelligence";
-import { getRecallUserId, listRecallMemories } from "../../../../lib/recall-store";
+import { getRecallUserId, listRecallMemories, saveRecallMemory } from "../../../../lib/recall-store";
 
 function parseRecallContext(value: string | null): RecallContext | undefined {
   if (value === null) return undefined;
@@ -10,26 +10,43 @@ function parseRecallContext(value: string | null): RecallContext | undefined {
 
 export async function GET(request: Request) {
   const rawContext = new URL(request.url).searchParams.get("context");
-  const context: RecallContext | undefined = parseRecallContext(rawContext);
-
-  if (rawContext !== null && context === undefined) {
-    return NextResponse.json({ error: "context must be personal, family, or business." }, { status: 400 });
-  }
-
+  const context = parseRecallContext(rawContext);
+  if (rawContext !== null && context === undefined) return NextResponse.json({ error: "context must be personal, family, or business." }, { status: 400 });
   const userId = await getRecallUserId();
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) {
-    return NextResponse.json({ error: "Authentication is required to retrieve Recall memories." }, { status: 401 });
-  }
-
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) return NextResponse.json({ error: "Authentication is required to retrieve Recall memories." }, { status: 401 });
   try {
     const memories = await listRecallMemories(context, userId);
-    return NextResponse.json({
-      memories: memories.map((memory) => ({
-        ...memory,
-        intelligence: assessRecallIntelligence(memory),
-      })),
-    });
+    return NextResponse.json({ memories: memories.map((memory) => ({ ...memory, intelligence: assessRecallIntelligence(memory) })) });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to retrieve Recall memories." }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  const userId = await getRecallUserId();
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) return NextResponse.json({ error: "Authentication is required to create Recall memories." }, { status: 401 });
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 }); }
+
+  const context = body.context;
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const narrative = typeof body.narrative === "string" ? body.narrative.trim() : "";
+  const evidenceClass = body.evidenceClass;
+  if (!isRecallContext(context) || !title || !narrative || !isEvidenceClass(evidenceClass)) return NextResponse.json({ error: "context, title, narrative, and a valid evidenceClass are required." }, { status: 400 });
+  if (body.confidence !== undefined && (typeof body.confidence !== "number" || body.confidence < 0 || body.confidence > 1)) return NextResponse.json({ error: "confidence must be between 0 and 1." }, { status: 400 });
+
+  const input: RecallMemoryInput = {
+    context, title, narrative, evidenceClass,
+    occurredAt: typeof body.occurredAt === "string" ? body.occurredAt : undefined,
+    people: Array.isArray(body.people) ? body.people.filter((v): v is string => typeof v === "string") : [],
+    sourceRefs: Array.isArray(body.sourceRefs) ? body.sourceRefs.filter((v): v is string => typeof v === "string") : [],
+    confidence: typeof body.confidence === "number" ? body.confidence : undefined,
+  };
+
+  try {
+    const memory = await saveRecallMemory(normalizeRecallMemory(input), userId);
+    return NextResponse.json({ memory, intelligence: assessRecallIntelligence(memory) }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to save Recall memory." }, { status: 500 });
   }
 }
