@@ -1,0 +1,13 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+type Snapshot = { totalMemories: number; domains: string[]; readiness: number; gaps: Array<{ domain: string; severity: string; title: string; reason: string }> };
+
+export default function ContinuityPage() {
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => { fetch("/api/continuity").then(async (r) => { const data = await r.json(); if (!r.ok) throw new Error(data.error ?? "Unable to load readiness."); setSnapshot(data); }).catch((e) => setError(e.message)); }, []);
+  return <main className="mx-auto max-w-6xl px-6 py-12"><div className="flex items-start justify-between gap-6"><div><p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">Legacy OS</p><h1 className="mt-2 text-4xl font-semibold tracking-tight">Continuity Readiness</h1><p className="mt-3 max-w-2xl text-muted-foreground">See what Legacy OS currently understands about your life and business, where the record is strong, and where continuity gaps remain.</p></div><Link className="rounded-md border px-4 py-2 text-sm" href="/dashboard">Dashboard</Link></div>{error && <p className="mt-8 rounded-lg border p-4 text-sm">{error}</p>}{snapshot && <><section className="mt-8 grid gap-4 md:grid-cols-3"><article className="rounded-xl border p-6"><p className="text-sm text-muted-foreground">Readiness</p><div className="mt-2 text-5xl font-semibold">{snapshot.readiness}%</div></article><article className="rounded-xl border p-6"><p className="text-sm text-muted-foreground">Memories</p><div className="mt-2 text-5xl font-semibold">{snapshot.totalMemories}</div></article><article className="rounded-xl border p-6"><p className="text-sm text-muted-foreground">Domains covered</p><div className="mt-2 text-5xl font-semibold">{snapshot.domains.length}</div></article></section><section className="mt-8 rounded-xl border p-6"><h2 className="text-xl font-semibold">Continuity gaps</h2><div className="mt-5 space-y-3">{snapshot.gaps.length ? snapshot.gaps.map((gap, i) => <article key={`${gap.domain}-${i}`} className="rounded-lg border p-4"><div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">{gap.title}</h3><span className="text-xs uppercase tracking-wide text-muted-foreground">{gap.severity}</span></div><p className="mt-2 text-sm text-muted-foreground">{gap.reason}</p></article>) : <p className="text-sm text-muted-foreground">No current gaps detected from the available Recall record.</p>}</div></section></>}</main>;
+}
