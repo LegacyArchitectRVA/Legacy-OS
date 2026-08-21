@@ -16,6 +16,7 @@ export default function Dashboard() {
         {modules.map((module) => <div key={module} className="rounded border p-6">{module}</div>)}
         <Link href="/dashboard/recall" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Legacy Recall</div><p className="mt-2 text-sm text-muted-foreground">Find the memories, evidence, and provenance behind your continuity record.</p></Link>
         <Link href="/dashboard/continuity" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Continuity Readiness</div><p className="mt-2 text-sm text-muted-foreground">See coverage, readiness, and the gaps that could interrupt continuity.</p></Link>
+        <Link href="/dashboard/visual-recreation" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Visual Recreation</div><p className="mt-2 text-sm text-muted-foreground">Explore reconstructed people, business, digital systems, assets, and timeline.</p></Link>
       </div>
     </main>
   );
