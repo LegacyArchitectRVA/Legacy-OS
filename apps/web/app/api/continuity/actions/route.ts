@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getRecallUserId, listRecallMemories } from "../../../../../lib/recall-store";
-import { buildContinuitySnapshot } from "../../../../../lib/continuity";
-import { buildContinuityActions } from "../../../../../lib/continuity-actions";
+import { getRecallUserId, listRecallMemories } from "../../../../lib/recall-store";
+import { buildContinuitySnapshot } from "../../../../lib/continuity";
+import { buildContinuityActions } from "../../../../lib/continuity-actions";
 
 export async function GET() {
   const userId = await getRecallUserId();
