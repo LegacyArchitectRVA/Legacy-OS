@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getSuccessorActionState, setSuccessorActionState, type SuccessorActionStatus } from "../../../../../lib/successor-state";
+import { getSuccessorActionState, setSuccessorActionState } from "../../../../../lib/successor-state";
+import type { SuccessorActionState } from "../../../../../lib/successor-action-types";
 
-const statuses: SuccessorActionStatus[] = ["open", "in_progress", "blocked", "complete"];
+const statuses: SuccessorActionState[] = ["open", "in_progress", "blocked", "complete"];
 
 export async function GET(request: Request) {
   const actionId = new URL(request.url).searchParams.get("actionId");
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { actionId?: string; status?: SuccessorActionStatus; evidenceConfirmed?: boolean; notes?: string };
+    const body = await request.json() as { actionId?: string; status?: SuccessorActionState; evidenceConfirmed?: boolean; notes?: string };
     if (!body.actionId || !body.status || !statuses.includes(body.status)) return NextResponse.json({ error: "actionId and a valid status are required." }, { status: 400 });
     if (body.status === "complete" && !body.evidenceConfirmed) return NextResponse.json({ error: "Evidence confirmation is required before completing this action." }, { status: 409 });
     return NextResponse.json(await setSuccessorActionState({ actionId: body.actionId, status: body.status, evidenceConfirmed: Boolean(body.evidenceConfirmed), notes: body.notes }));
