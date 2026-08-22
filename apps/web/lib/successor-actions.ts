@@ -1,3 +1,11 @@
-export type SuccessorActionState = "open" | "in_progress" | "blocked" | "complete";
-export interface SuccessorAction { id: string; title: string; domain: string; instruction: string; state: SuccessorActionState; evidenceRequired: boolean; evidenceConfirmed?: boolean; dependencies: string[]; updatedAt?: string; }
-export function transitionSuccessorAction(action: SuccessorAction, state: SuccessorActionState): SuccessorAction { if (action.state === "complete" && state !== "complete") return action; if (state === "complete" && action.evidenceRequired && !action.evidenceConfirmed) return { ...action, state: "blocked", updatedAt: new Date().toISOString() }; return { ...action, state, updatedAt: new Date().toISOString() }; }
+import type { SuccessorAction, SuccessorActionState } from "./successor-action-types";
+
+export type { SuccessorAction, SuccessorActionState } from "./successor-action-types";
+
+export function transitionSuccessorAction(action: SuccessorAction, state: SuccessorActionState): SuccessorAction {
+  if (action.state === "complete" && state !== "complete") return action;
+  if (state === "complete" && action.evidenceRequired && !action.evidenceConfirmed) {
+    return { ...action, state: "blocked", updatedAt: new Date().toISOString() };
+  }
+  return { ...action, state, updatedAt: new Date().toISOString() };
+}
