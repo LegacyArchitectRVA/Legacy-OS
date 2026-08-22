@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { transitionSuccessorAction, type SuccessorActionState } from "../../../../../lib/successor-actions";
+import { transitionSuccessorAction, type SuccessorActionState } from "../../../lib/successor-actions";
 
 export async function POST(request: Request) {
   try {
