@@ -1,13 +1,9 @@
+import { getRecallUserId } from "./recall-store";
+import { getSupabaseServerClient } from "./supabase";
+
 export type SuccessorActionStatus = "open" | "in_progress" | "blocked" | "complete";
-
 export interface SuccessorActionState { actionId: string; status: SuccessorActionStatus; updatedAt: string; evidenceConfirmed: boolean; notes?: string; }
-
 const memory = new Map<string, SuccessorActionState>();
-
-export function getSuccessorActionState(actionId: string): SuccessorActionState { return memory.get(actionId) ?? { actionId, status: "open", updatedAt: new Date().toISOString(), evidenceConfirmed: false }; }
-
-export function setSuccessorActionState(input: Omit<SuccessorActionState, "updatedAt">): SuccessorActionState {
-  const state = { ...input, updatedAt: new Date().toISOString() };
-  memory.set(input.actionId, state);
-  return state;
-}
+function mapRow(row: Record<string, unknown>): SuccessorActionState { return { actionId: String(row.id), status: row.state as SuccessorActionStatus, updatedAt: String(row.updated_at), evidenceConfirmed: Boolean(row.evidence_confirmed), notes: typeof row.notes === "string" ? row.notes : undefined }; }
+export async function getSuccessorActionState(actionId: string): Promise<SuccessorActionState> { const supabase = getSupabaseServerClient(); const userId = await getRecallUserId(); if (supabase && !userId) throw new Error("Authentication is required for successor action state."); if (supabase && userId) { const { data, error } = await supabase.from("legacy_successor_actions").select("id,state,updated_at,evidence_confirmed,notes").eq("id", actionId).eq("user_id", userId).maybeSingle(); if (error) throw new Error(`Successor action retrieval failed: ${error.message}`); if (data) return mapRow(data); } return memory.get(actionId) ?? { actionId, status: "open", updatedAt: new Date().toISOString(), evidenceConfirmed: false }; }
+export async function setSuccessorActionState(input: Omit<SuccessorActionState, "updatedAt">): Promise<SuccessorActionState> { const supabase = getSupabaseServerClient(); const userId = await getRecallUserId(); if (supabase && !userId) throw new Error("Authentication is required for successor action state."); if (supabase && userId) { const { data, error } = await supabase.from("legacy_successor_actions").update({ state: input.status, evidence_confirmed: input.evidenceConfirmed, notes: input.notes ?? null, updated_at: new Date().toISOString() }).eq("id", input.actionId).eq("user_id", userId).select("id,state,updated_at,evidence_confirmed,notes").maybeSingle(); if (error) throw new Error(`Successor action update failed: ${error.message}`); if (data) return mapRow(data); } const state = { ...input, updatedAt: new Date().toISOString() }; memory.set(input.actionId, state); return state; }
