@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node scripts/test-accessibility.mjs"
+    "test": "node scripts/test-accessibility.mjs && node --experimental-strip-types scripts/test-successor-workspace.mjs"
   },
   "dependencies": {
     "next": "latest",
