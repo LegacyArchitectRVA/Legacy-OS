@@ -14,13 +14,18 @@
     "react-dom": "latest",
     "typescript": "latest",
     "@supabase/supabase-js": "latest",
-    "openai": "latest"
+    "openai": "latest",
+    "three": "latest",
+    "@react-three/fiber": "latest",
+    "@react-three/drei": "latest",
+    "postprocessing": "latest"
   },
   "devDependencies": {
     "tailwindcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/three": "latest",
     "eslint": "latest",
     "@eslint/js": "latest",
     "typescript-eslint": "latest",
