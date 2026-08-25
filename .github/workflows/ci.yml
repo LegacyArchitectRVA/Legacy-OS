@@ -2,7 +2,7 @@ name: Legacy OS CI
 
 on:
   push:
-    branches: [main, 'feat/**']
+    branches: [main, 'feat/**', 'debug/**']
   pull_request:
   workflow_dispatch:
 
@@ -38,6 +38,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Visual stack smoke test
+        run: node scripts/visual-ci-smoke.mjs
 
       - name: Build
         run: npm run build
