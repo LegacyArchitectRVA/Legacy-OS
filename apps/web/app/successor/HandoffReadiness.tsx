@@ -10,8 +10,8 @@ interface HandoffReadiness {
   blockedActions: number;
   inProgressActions: number;
   completedActions: number;
-  unresolvedDependencies: string[];
-  outstandingEvidence: string[];
+  unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>;
+  evidenceOutstanding: Array<{ id: string; title: string; domain: string }>;
 }
 
 export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionId: string) => void }) {
@@ -22,11 +22,23 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
     return () => { active = false; };
   }, []);
   if (!data) return <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-sm text-white/40">Checking handoff readiness…</div>;
-  const issues = [...data.unresolvedDependencies, ...data.outstandingEvidence];
+
+  const dependencyIssues = data.unresolvedDependencies.map((issue) => ({
+    key: `dependency:${issue.actionId}:${issue.dependencyId}`,
+    actionId: issue.actionId,
+    label: `Waiting on ${issue.dependencyId}`,
+  }));
+  const evidenceIssues = data.evidenceOutstanding.map((action) => ({
+    key: `evidence:${action.id}`,
+    actionId: action.id,
+    label: `Evidence needed: ${action.title}`,
+  }));
+  const issues = [...dependencyIssues, ...evidenceIssues];
+
   return <>
     <section className={`rounded-2xl border p-5 ${data.ready ? "border-emerald-400/25 bg-emerald-400/[0.04]" : "border-[#e7b84b]/25 bg-[#e7b84b]/[0.04]"}`}>
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Handoff Readiness</p><h2 className="mt-1 text-xl font-semibold">{data.ready ? "Ready for a clean handoff" : "Handoff needs attention"}</h2></div><div className="text-right"><div className="text-3xl font-semibold">{data.completionPercent}%</div><div className="text-xs text-white/40">complete</div></div></div>
-      {!data.ready && <div className="mt-5"><p className="text-sm text-white/55">Resolve these items before treating the workspace as successor-ready.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{issues.slice(0, 8).map((issue) => <button key={issue} onClick={() => onSelectAction?.(issue)} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-sm text-white/60 hover:border-[#e7b84b]/30">{issue}</button>)}</div></div>}
+      {!data.ready && <div className="mt-5"><p className="text-sm text-white/55">Resolve these items before treating the workspace as successor-ready.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{issues.slice(0, 8).map((issue) => <button key={issue.key} onClick={() => onSelectAction?.(issue.actionId)} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-sm text-white/60 hover:border-[#e7b84b]/30">{issue.label}</button>)}</div></div>}
     </section>
     <HandoffReport onSelect={onSelectAction} />
   </>;
