@@ -31,6 +31,7 @@
     "@eslint/js": "latest",
     "typescript-eslint": "latest",
     "eslint-plugin-react-hooks": "latest",
-    "eslint-plugin-react-refresh": "latest"
+    "eslint-plugin-react-refresh": "latest",
+    "vitest": "latest"
   }
 }
