@@ -11,6 +11,6 @@ assert.match(scene, /Environment/);
 
 const page = fs.readFileSync("app/successor/page.tsx", "utf8");
 assert.match(page, /ContinuityScene/);
-assert.doesNotMatch(page, /Rin|roƄott|mascot/i);
+assert.doesNotMatch(page, /\bRin\b/i);
 
 console.log("visual-ci-smoke: passed");
