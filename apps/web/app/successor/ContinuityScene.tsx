@@ -25,13 +25,13 @@ function ContinuityCore() {
 }
 
 const pillars = [
-  "Digital Life",
-  "Financial & Assets",
-  "Household & Property",
-  "Health & Medical",
-  "Legal & Estate",
-  "Business Continuity",
-  "Legacy & Wishes",
+  { name: "Digital Life", color: "#3b82f6" },
+  { name: "Financial & Assets", color: "#f43f5e" },
+  { name: "Household & Property", color: "#eab308" },
+  { name: "Health & Medical", color: "#10b981" },
+  { name: "Legal & Estate", color: "#f8fafc" },
+  { name: "Legacy & Wishes", color: "#a855f7" },
+  { name: "Business Continuity", color: "#94a3b8" },
 ];
 
 export function ContinuityScene() {
@@ -62,9 +62,9 @@ export function ContinuityScene() {
         <p className="text-[10px] uppercase tracking-[0.35em] text-[#e7b84b]">Seven Pillars of Continuity</p>
         <div className="mx-auto mt-4 grid max-w-2xl grid-cols-2 gap-2 px-8 sm:grid-cols-4">
           {pillars.map((pillar, index) => (
-            <div key={pillar} className="rounded-lg border border-white/10 bg-black/45 px-2 py-2 backdrop-blur-sm">
-              <span className="text-[9px] text-[#e7b84b]">0{index + 1}</span>
-              <span className="ml-1 text-[10px] text-white/65">{pillar}</span>
+            <div key={pillar.name} className="rounded-lg border bg-black/45 px-2 py-2 backdrop-blur-sm" style={{ borderColor: `${pillar.color}55` }}>
+              <span className="text-[9px] font-semibold" style={{ color: pillar.color }}>0{index + 1}</span>
+              <span className="ml-1 text-[10px] text-white/65">{pillar.name}</span>
             </div>
           ))}
         </div>
