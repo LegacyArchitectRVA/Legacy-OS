@@ -45,15 +45,18 @@ export default function ProfilePage() {
     setSaved(!error);
   }
 
+  function completeOrientation() {
+    setShowTour(false);
+    window.history.replaceState({}, "", "/profile");
+  }
+
   return (
     <main className="min-h-screen bg-[#050505] px-5 py-10 text-white sm:px-8">
       <div className="mx-auto max-w-5xl">
         <header className="border-b border-white/10 pb-6">
           <p className="text-xs uppercase tracking-[0.3em] text-[#e7b84b]">Legacy OS</p>
           <h1 className="mt-2 font-serif text-4xl">Your Profile</h1>
-          <p className="mt-2 text-sm text-white/45">
-            This is your personal starting point. Everything else in the OS grows from here.
-          </p>
+          <p className="mt-2 text-sm text-white/45">This is your personal starting point. Everything else in the OS grows from here.</p>
         </header>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -61,44 +64,26 @@ export default function ProfilePage() {
             <h2 className="text-xl font-semibold">Identity</h2>
             <label className="mt-6 block text-sm text-white/60">
               Name
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-[#e7b84b]/50"
-                autoComplete="name"
-              />
+              <input value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-[#e7b84b]/50" autoComplete="name" />
             </label>
             <label className="mt-4 block text-sm text-white/60">
               Email
-              <input
-                value={userEmail}
-                readOnly
-                className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-white/45"
-              />
+              <input value={userEmail} readOnly className="mt-2 w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-white/45" />
             </label>
-            <button disabled={saving} className="mt-6 rounded-lg bg-[#b98a25] px-5 py-3 font-semibold text-black">
-              {saving ? "Saving…" : "Save profile"}
-            </button>
+            <button disabled={saving} className="mt-6 rounded-lg bg-[#b98a25] px-5 py-3 font-semibold text-black">{saving ? "Saving…" : "Save profile"}</button>
             {saved && <span className="ml-3 text-sm text-emerald-300">Saved</span>}
           </form>
 
           <aside className="rounded-2xl border border-[#e7b84b]/25 bg-[#100d07] p-6">
             <p className="text-xs uppercase tracking-[0.25em] text-[#e7b84b]">Your guide</p>
             <h2 className="mt-2 font-serif text-2xl">Elara</h2>
-            <p className="mt-3 text-sm leading-6 text-white/55">
-              Your default guide through the Legacy OS, from your first profile setup to the seven pillars and everything connected to them.
-            </p>
-            <button
-              onClick={() => setShowTour(true)}
-              className="mt-5 w-full rounded-lg border border-[#e7b84b]/30 px-4 py-3 text-sm text-[#f0c85a]"
-            >
-              Start orientation again
-            </button>
+            <p className="mt-3 text-sm leading-6 text-white/55">Your default guide through the Legacy OS, from your first profile setup to the seven pillars and everything connected to them.</p>
+            <button onClick={() => setShowTour(true)} className="mt-5 w-full rounded-lg border border-[#e7b84b]/30 px-4 py-3 text-sm text-[#f0c85a]">Start orientation again</button>
           </aside>
         </div>
       </div>
 
-      {showTour && <OrientationTour />}
+      {showTour && <OrientationTour onComplete={completeOrientation} />}
     </main>
   );
 }
