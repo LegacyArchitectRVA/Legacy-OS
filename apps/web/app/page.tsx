@@ -5,6 +5,7 @@ import SignLanguagePanel from "./components/SignLanguagePanel";
 import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
 import VisualRecallPanel from "./components/VisualRecallPanel";
 import LegacyContextSelector from "./components/LegacyContextSelector";
+import SevenPillarsLifeMap3D from "./components/SevenPillarsLifeMap3D";
 
 const modules = [
   { name: "Knowledge Brain", description: "Your searchable memory for people, places, documents, decisions, and know-how." },
@@ -25,6 +26,10 @@ export default function Home() {
         </header>
 
         <section className="mt-8"><LegacyContextSelector /></section>
+
+        <section className="mt-10">
+          <SevenPillarsLifeMap3D />
+        </section>
 
         <section aria-labelledby="modules-heading" className="mt-10">
           <div className="flex items-end justify-between gap-4">
