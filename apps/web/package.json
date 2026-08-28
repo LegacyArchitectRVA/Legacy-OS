@@ -6,6 +6,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "node scripts/test-accessibility.mjs && node --experimental-strip-types scripts/test-successor-workspace.mjs"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "@eslint/js": "latest",
     "typescript-eslint": "latest",
     "eslint-plugin-react-hooks": "latest",
-    "eslint-plugin-react-refresh": "latest"
+    "eslint-plugin-react-refresh": "latest",
+    "vitest": "latest"
   }
 }
