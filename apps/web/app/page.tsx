@@ -1,4 +1,5 @@
 import AccessibilitySettings from "./components/AccessibilitySettings";
+import ElaraGuide3D from "./components/ElaraGuide3D";
 import HolographicRecallViewer from "./components/HolographicRecallViewer";
 import RecallMemoryComposer from "./components/RecallMemoryComposer";
 import SignLanguagePanel from "./components/SignLanguagePanel";
@@ -26,6 +27,10 @@ export default function Home() {
         </header>
 
         <section className="mt-8"><LegacyContextSelector /></section>
+
+        <section className="mt-10">
+          <ElaraGuide3D activePillar="01" />
+        </section>
 
         <section className="mt-10">
           <SevenPillarsLifeMap3D />
