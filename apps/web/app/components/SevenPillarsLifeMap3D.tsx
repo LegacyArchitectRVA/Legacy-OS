@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, OrbitControls, Text } from "@react-three/drei";
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 
 const pillars = [
@@ -16,11 +16,12 @@ const pillars = [
 ] as const;
 
 function Pillar({ index, label, color, selected, onSelect }: { index: string; label: string; color: string; selected: boolean; onSelect: () => void }) {
-  const ref = useMemo(() => new THREE.Object3D(), []);
+  const ref = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
+    if (!ref.current) return;
     const t = clock.elapsedTime;
-    ref.position.y = Math.sin(t * 0.8 + Number(index)) * 0.06;
-    ref.rotation.y = Math.sin(t * 0.35 + Number(index)) * 0.08;
+    ref.current.position.y = Math.sin(t * 0.8 + Number(index)) * 0.06;
+    ref.current.rotation.y = Math.sin(t * 0.35 + Number(index)) * 0.08;
   });
   const angle = ((Number(index) - 1) / 7) * Math.PI * 2;
   const radius = 2.45;
@@ -37,10 +38,6 @@ function Pillar({ index, label, color, selected, onSelect }: { index: string; la
 }
 
 function Core() {
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    return t;
-  });
   return (
     <Float speed={1.2} rotationIntensity={0.12} floatIntensity={0.16}>
       <mesh>
