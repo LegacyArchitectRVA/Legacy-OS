@@ -1,6 +1,7 @@
 import AccessibilitySettings from "./components/AccessibilitySettings";
 import ElaraGuide3D from "./components/ElaraGuide3D";
 import HolographicRecallViewer from "./components/HolographicRecallViewer";
+import MemoryRecreation from "./components/MemoryRecreation";
 import RecallMemoryComposer from "./components/RecallMemoryComposer";
 import SignLanguagePanel from "./components/SignLanguagePanel";
 import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
@@ -27,28 +28,18 @@ export default function Home() {
         </header>
 
         <section className="mt-8"><LegacyContextSelector /></section>
-
-        <section className="mt-10">
-          <ElaraGuide3D activePillar="01" />
-        </section>
-
-        <section className="mt-10">
-          <SevenPillarsLifeMap3D />
-        </section>
+        <section className="mt-10"><ElaraGuide3D activePillar="01" /></section>
+        <section className="mt-10"><SevenPillarsLifeMap3D /></section>
 
         <section aria-labelledby="modules-heading" className="mt-10">
-          <div className="flex items-end justify-between gap-4">
-            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Continuity system</p><h2 id="modules-heading" className="mt-1 text-2xl font-semibold">Your LegacyOS layers</h2></div>
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/40">Foundation</span>
-          </div>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {modules.map((module) => <article key={module.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"><h3 className="font-semibold text-white">{module.name}</h3><p className="mt-2 text-sm leading-6 text-white/50">{module.description}</p></article>)}
-          </div>
+          <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Continuity system</p><h2 id="modules-heading" className="mt-1 text-2xl font-semibold">Your LegacyOS layers</h2></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/40">Foundation</span></div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">{modules.map((module) => <article key={module.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"><h3 className="font-semibold text-white">{module.name}</h3><p className="mt-2 text-sm leading-6 text-white/50">{module.description}</p></article>)}</div>
         </section>
 
         <section aria-labelledby="recall-heading" className="mt-10">
-          <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Human memory layer</p><h2 id="recall-heading" className="mt-1 text-2xl font-semibold">Legacy Recall</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-white/50">Capture memories as evidence-grounded records, then connect them to the visual Recall experience.</p></div>
-          <div className="grid gap-8 lg:grid-cols-2"><VisualRecallPanel /><HolographicRecallViewer mediaKind="scene" /></div>
+          <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Human memory layer</p><h2 id="recall-heading" className="mt-1 text-2xl font-semibold">Legacy Recall</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-white/50">Preserve the evidence, stories, voices, and experiences that make a person more than a collection of files.</p></div>
+          <MemoryRecreation personName="Dad" question="Hey Dad, remember when we went fishing for the first time?" verifiedMemories={["Dad recorded this memory, preserving his own account of the first fishing trip."]} reconstructedResponse="I remember you were excited before we even got the boat in the water. This response is a reconstruction from preserved evidence, not a recording of Dad's literal words." />
+          <div className="mt-8 grid gap-8 lg:grid-cols-2"><VisualRecallPanel /><HolographicRecallViewer mediaKind="scene" /></div>
           <div className="mt-8 max-w-2xl"><RecallMemoryComposer context="personal" /></div>
         </section>
 
