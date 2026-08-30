@@ -2,12 +2,14 @@ import AccessibilitySettings from "./components/AccessibilitySettings";
 import ElaraGuide3D from "./components/ElaraGuide3D";
 import HolographicRecallViewer from "./components/HolographicRecallViewer";
 import MemoryRecreation from "./components/MemoryRecreation";
+import ReconstructionReadiness from "./components/ReconstructionReadiness";
 import RecallMemoryComposer from "./components/RecallMemoryComposer";
 import SignLanguagePanel from "./components/SignLanguagePanel";
 import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
 import VisualRecallPanel from "./components/VisualRecallPanel";
 import LegacyContextSelector from "./components/LegacyContextSelector";
 import SevenPillarsLifeMap3D from "./components/SevenPillarsLifeMap3D";
+import type { PersonReconstructionProfile } from "./lib/person-reconstruction";
 
 const modules = [
   { name: "Knowledge Brain", description: "Your searchable memory for people, places, documents, decisions, and know-how." },
@@ -16,6 +18,17 @@ const modules = [
   { name: "Legacy Recall", description: "Preserve stories, memories, relationships, voice, images, and video with evidence and provenance." },
   { name: "Legacy Score", description: "See how prepared your life, family, or business is for interruption and transition." },
 ];
+
+const demoReconstructionProfile: PersonReconstructionProfile = {
+  id: "demo-dad",
+  displayName: "Dad",
+  permission: "approved",
+  identityEvidence: ["preserved family photographs"],
+  voiceEvidence: ["family audio recordings"],
+  personalityEvidence: ["preserved conversations and stories"],
+  memorySourceIds: ["memory-fishing", "photo-fishing"],
+  sceneIds: ["first-fishing-trip"],
+};
 
 export default function Home() {
   return (
@@ -37,8 +50,9 @@ export default function Home() {
         </section>
 
         <section aria-labelledby="recall-heading" className="mt-10">
-          <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Human memory layer</p><h2 id="recall-heading" className="mt-1 text-2xl font-semibold">Legacy Recall</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-white/50">Preserve the evidence, stories, voices, and experiences that make a person more than a collection of files.</p></div>
-          <MemoryRecreation personName="Dad" question="Hey Dad, remember when we went fishing for the first time?" verifiedMemories={["Dad recorded this memory, preserving his own account of the first fishing trip."]} reconstructedResponse="I remember you were excited before we even got the boat in the water. This response is a reconstruction from preserved evidence, not a recording of Dad's literal words." />
+          <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Primary human memory feature</p><h2 id="recall-heading" className="mt-1 text-2xl font-semibold">Legacy Recall · Immersive Memory Recreation</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-white/50">Preserve enough of a person's life to reconstruct meaningful moments through evidence, voice, identity, personality, scenes, and conversation.</p></div>
+          <ReconstructionReadiness profile={demoReconstructionProfile} />
+          <div className="mt-6"><MemoryRecreation personName="Dad" personId="demo-dad" question="Hey Dad, remember when we went fishing for the first time?" verifiedMemories={["Dad recorded this memory, preserving his own account of the first fishing trip."]} reconstructedResponse="This is an AI reconstruction from preserved evidence, not Dad's literal words." /></div>
           <div className="mt-8 grid gap-8 lg:grid-cols-2"><VisualRecallPanel /><HolographicRecallViewer mediaKind="scene" /></div>
           <div className="mt-8 max-w-2xl"><RecallMemoryComposer context="personal" /></div>
         </section>
