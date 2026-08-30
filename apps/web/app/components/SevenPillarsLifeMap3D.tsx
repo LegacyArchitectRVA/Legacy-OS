@@ -1,9 +1,8 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { Float, OrbitControls, Text } from "@react-three/drei";
-import { useMemo, useState } from "react";
-import * as THREE from "three";
+import { useState } from "react";
 
 const pillars = [
   ["01", "Digital Life", "#63c7d8"],
@@ -16,31 +15,23 @@ const pillars = [
 ] as const;
 
 function Pillar({ index, label, color, selected, onSelect }: { index: string; label: string; color: string; selected: boolean; onSelect: () => void }) {
-  const ref = useMemo(() => new THREE.Object3D(), []);
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    ref.position.y = Math.sin(t * 0.8 + Number(index)) * 0.06;
-    ref.rotation.y = Math.sin(t * 0.35 + Number(index)) * 0.08;
-  });
   const angle = ((Number(index) - 1) / 7) * Math.PI * 2;
   const radius = 2.45;
   return (
-    <group ref={ref} position={[Math.cos(angle) * radius, 0, Math.sin(angle) * radius]} rotation={[0, -angle + Math.PI / 2, 0]} onClick={onSelect}>
-      <mesh scale={selected ? [1.12, 1.12, 1.12] : [1, 1, 1]}>
-        <cylinderGeometry args={[0.38, 0.48, 1.55, 32]} />
-        <meshStandardMaterial color={color} metalness={0.45} roughness={0.32} emissive={color} emissiveIntensity={selected ? 0.22 : 0.07} />
-      </mesh>
-      <Text position={[0, 0.95, 0]} fontSize={0.19} color="white" anchorX="center" anchorY="middle" maxWidth={1.3}>{label}</Text>
-      <Text position={[0, -0.98, 0]} fontSize={0.16} color={color} anchorX="center" anchorY="middle">{index}</Text>
-    </group>
+    <Float speed={0.8} rotationIntensity={0.08} floatIntensity={0.08}>
+      <group position={[Math.cos(angle) * radius, 0, Math.sin(angle) * radius]} rotation={[0, -angle + Math.PI / 2, 0]} onClick={onSelect}>
+        <mesh scale={selected ? [1.12, 1.12, 1.12] : [1, 1, 1]}>
+          <cylinderGeometry args={[0.38, 0.48, 1.55, 32]} />
+          <meshStandardMaterial color={color} metalness={0.45} roughness={0.32} emissive={color} emissiveIntensity={selected ? 0.22 : 0.07} />
+        </mesh>
+        <Text position={[0, 0.95, 0]} fontSize={0.19} color="white" anchorX="center" anchorY="middle" maxWidth={1.3}>{label}</Text>
+        <Text position={[0, -0.98, 0]} fontSize={0.16} color={color} anchorX="center" anchorY="middle">{index}</Text>
+      </group>
+    </Float>
   );
 }
 
 function Core() {
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    return t;
-  });
   return (
     <Float speed={1.2} rotationIntensity={0.12} floatIntensity={0.16}>
       <mesh>
