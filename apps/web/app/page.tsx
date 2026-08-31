@@ -4,6 +4,7 @@ import HolographicRecallViewer from "./components/HolographicRecallViewer";
 import MemoryRecreation from "./components/MemoryRecreation";
 import ReconstructionReadiness from "./components/ReconstructionReadiness";
 import RecallMemoryComposer from "./components/RecallMemoryComposer";
+import EvidenceVault from "./components/EvidenceVault";
 import SignLanguagePanel from "./components/SignLanguagePanel";
 import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
 import VisualRecallPanel from "./components/VisualRecallPanel";
@@ -54,6 +55,7 @@ export default function Home() {
           <ReconstructionReadiness profile={demoReconstructionProfile} />
           <div className="mt-6"><MemoryRecreation personName="Dad" personId="demo-dad" question="Hey Dad, remember when we went fishing for the first time?" verifiedMemories={["Dad recorded this memory, preserving his own account of the first fishing trip."]} reconstructedResponse="This is an AI reconstruction from preserved evidence, not Dad's literal words." /></div>
           <div className="mt-8 grid gap-8 lg:grid-cols-2"><VisualRecallPanel /><HolographicRecallViewer mediaKind="scene" /></div>
+          <div className="mt-8"><EvidenceVault context="personal" /></div>
           <div className="mt-8 max-w-2xl"><RecallMemoryComposer context="personal" /></div>
         </section>
 
