@@ -15,6 +15,7 @@
     "react-dom": "latest",
     "typescript": "latest",
     "@supabase/supabase-js": "latest",
+    "@supabase/ssr": "latest",
     "openai": "latest",
     "three": "latest",
     "@react-three/fiber": "latest",
