@@ -25,5 +25,5 @@ export async function PATCH(request: Request) {
   if (!existing) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   const profile = { ...existing, ...body, id: existing.id } as PersonReconstructionProfile;
   profiles.set(profile.id, profile);
-  return NextResponse.json({ profile, readiness: assessReconstructionReadiness(profile) });
+  return NextResponse.json({ profile, readiness: assessReconstructionReadiness(profile) }, { status: 200 });
 }
