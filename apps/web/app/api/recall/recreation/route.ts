@@ -1,46 +1,36 @@
 import { NextResponse } from "next/server";
 import { buildRecreationResponse, type MemoryRecreationRequest, type RecreationPerson, type RecreationScene, type RecreationSource } from "../../../lib/memory-recreation";
+import { getRecallUserId, listRecallMemories } from "../../../../lib/recall-store";
+import { listRecallEvidence } from "../../../../lib/recall-evidence-store";
 
-const demoPerson: RecreationPerson = {
-  id: "demo-dad",
-  displayName: "Dad",
-  approvedForRecreation: true,
-  sources: [
-    { id: "memory-fishing", type: "memory", title: "The first fishing trip", evidence: "verified" },
-    { id: "photo-fishing", type: "photo", title: "Fishing trip photograph", evidence: "verified" },
-  ],
-};
-
-const demoScene: RecreationScene = {
-  id: "first-fishing-trip",
-  title: "The first fishing trip",
-  location: "Family lake",
-  sourceIds: ["memory-fishing", "photo-fishing"],
-  confidence: 0.92,
-};
+function normalizePerson(value: string) { return value.trim().toLowerCase(); }
 
 export async function POST(request: Request) {
+  const userId = await getRecallUserId();
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !userId) return NextResponse.json({ error: "Authentication is required for person recreation." }, { status: 401 });
+  if (!userId) return NextResponse.json({ error: "Persistent Recall storage is required for person recreation." }, { status: 503 });
+
   let body: Partial<MemoryRecreationRequest>;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 }); }
+  if (typeof body.personId !== "string" || body.personId.trim().length < 1) return NextResponse.json({ error: "personId is required." }, { status: 400 });
+  if (typeof body.prompt !== "string" || body.prompt.trim().length < 2) return NextResponse.json({ error: "prompt is required." }, { status: 400 });
+
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
-  }
+    const memories = await listRecallMemories(undefined, userId);
+    const personId = normalizePerson(body.personId);
+    const related = memories.filter((memory) => memory.people.some((person) => normalizePerson(person) === personId));
+    if (!related.length) return NextResponse.json({ error: "No preserved memories were found for this person." }, { status: 404 });
 
-  if (typeof body.personId !== "string" || body.personId.trim().length < 1) {
-    return NextResponse.json({ error: "personId is required." }, { status: 400 });
+    const displayName = related.flatMap((memory) => memory.people).find((person) => normalizePerson(person) === personId) ?? body.personId.trim();
+    const evidence = (await Promise.all(related.map((memory) => listRecallEvidence(memory.id, userId)))).flat();
+    const sources: RecreationSource[] = [
+      ...related.map((memory) => ({ id: memory.id, type: "memory" as const, title: memory.title, evidence: memory.evidenceClass === "known" ? "verified" as const : memory.evidenceClass === "inferred" ? "inferred" as const : "reconstructed" as const })),
+      ...evidence.map((item) => ({ id: item.id, type: item.type === "link" || item.type === "note" ? "document" as const : item.type, title: item.label, uri: item.uri, evidence: item.verificationStatus === "verified" ? "verified" as const : "unknown" as const })),
+    ];
+    const person: RecreationPerson = { id: personId, displayName, approvedForRecreation: true, sources };
+    const scene: RecreationScene | undefined = body.sceneId ? { id: body.sceneId, title: body.sceneId, sourceIds: sources.map((source) => source.id), confidence: related.reduce((sum, memory) => sum + (memory.confidence ?? 0.5), 0) / related.length } : undefined;
+    return NextResponse.json(buildRecreationResponse(person, body.prompt, sources, scene));
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to build recreation response." }, { status: 500 });
   }
-  if (typeof body.prompt !== "string" || body.prompt.trim().length < 2) {
-    return NextResponse.json({ error: "prompt is required." }, { status: 400 });
-  }
-
-  if (body.personId !== demoPerson.id) {
-    return NextResponse.json({ error: "Person recreation is not available for this person yet." }, { status: 404 });
-  }
-
-  const sources: RecreationSource[] = demoPerson.sources;
-  const scene = body.sceneId === demoScene.id ? demoScene : undefined;
-  const result = buildRecreationResponse(demoPerson, body.prompt, sources, scene);
-
-  return NextResponse.json(result, { status: 200 });
 }
