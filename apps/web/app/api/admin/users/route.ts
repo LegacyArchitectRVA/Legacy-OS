@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { isAdminRequest, validateUserCredentials } from "../../../lib/admin-users";
+import { isAdminRequest, validateUserCredentials } from "../../../lib/admin-auth";
 
 function supabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,7 +10,7 @@ function supabaseAdmin() {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  if (!(await isAdminRequest(request))) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   try {
     const body = (await request.json()) as { email?: string; password?: string; sendInvite?: boolean };
     const email = body.email?.trim().toLowerCase() ?? "";
