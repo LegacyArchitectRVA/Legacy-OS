@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(17);
 
 -- Test users are transaction-scoped and are rolled back with this test.
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data)
@@ -12,13 +12,17 @@ values
   ('00000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'outsider@test.local', '{}', '{}');
 
 insert into public.workspaces (id, name, owner_id)
-values ('10000000-0000-0000-0000-000000000001', 'RLS Test Workspace', '00000000-0000-0000-0000-000000000001');
+values
+  ('10000000-0000-0000-0000-000000000001', 'RLS Test Workspace', '00000000-0000-0000-0000-000000000001'),
+  ('20000000-0000-0000-0000-000000000001', 'Other Workspace', '00000000-0000-0000-0000-000000000003');
 
 insert into public.workspace_members (workspace_id, user_id, role)
 values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 'member');
 
 insert into public.knowledge_documents (workspace_id, title, content)
-values ('10000000-0000-0000-0000-000000000001', 'RLS Test Document', 'test');
+values
+  ('10000000-0000-0000-0000-000000000001', 'RLS Test Document', 'test'),
+  ('20000000-0000-0000-0000-000000000001', 'Other Document', 'private');
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.workspaces'::regclass),
@@ -66,14 +70,14 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
-select is((select count(*)::integer from public.workspaces), 0, 'non-member cannot read workspace');
-select is((select count(*)::integer from public.knowledge_documents), 0, 'non-member cannot read workspace documents');
+select is((select count(*)::integer from public.workspaces), 1, 'non-member only sees own workspace');
+select is((select count(*)::integer from public.knowledge_documents), 1, 'non-member only sees own workspace documents');
 select throws_ok(
   $$insert into public.knowledge_documents (workspace_id, title) values ('10000000-0000-0000-0000-000000000001', 'Unauthorized Insert')$$,
   '42501',
-  'non-member cannot insert workspace document'
+  'non-member cannot insert into another workspace'
 );
-select is((select count(*)::integer from public.workspace_members), 0, 'non-member cannot read membership rows');
+select is((select count(*)::integer from public.workspace_members), 0, 'non-member cannot read another workspace membership');
 
 set local role anon;
 select is((select count(*)::integer from public.workspaces), 0, 'anonymous role cannot read workspaces');
