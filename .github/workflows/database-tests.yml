@@ -1,0 +1,33 @@
+name: LegacyOS Database Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.101.0
+
+      - name: Start local database
+        run: supabase start -x studio,imgproxy,edge-runtime,vector,logflare
+
+      - name: Run pgTAP database tests
+        run: supabase test db
