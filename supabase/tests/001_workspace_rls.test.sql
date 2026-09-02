@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(20);
 
 -- Test users are transaction-scoped and are rolled back with this test.
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data)
@@ -45,6 +45,27 @@ select ok(
     where table_schema = 'public' and table_name = 'knowledge_documents' and grantee = 'anon'
   ),
   'anon has no table grants on knowledge_documents'
+);
+select ok(
+  (select prosecdef from pg_proc where oid = 'private.user_can_access_workspace(uuid)'::regprocedure),
+  'workspace access helper is SECURITY DEFINER'
+);
+select ok(
+  exists (
+    select 1 from pg_proc
+    where oid = 'private.user_can_access_workspace(uuid)'::regprocedure
+      and proconfig @> array['search_path=']
+  ),
+  'workspace access helper uses an empty search_path'
+);
+select ok(
+  not exists (
+    select 1 from information_schema.role_routine_grants
+    where specific_schema = 'private'
+      and routine_name = 'user_can_access_workspace'
+      and grantee = 'anon'
+  ),
+  'anon cannot execute the workspace access helper'
 );
 
 set local role authenticated;
