@@ -49,7 +49,7 @@ function inspectFile(file) {
 walk(repoRoot);
 
 const packageJson = read(path.join(process.cwd(), "package.json"));
-if (packageJson && /"[^\"]+"\s*:\s*"latest"/.test(packageJson)) {
+if (packageJson && /"[^"]+"\s*:\s*"latest"/.test(packageJson)) {
   findings.push("apps/web/package.json: floating 'latest' dependency detected");
 }
 
