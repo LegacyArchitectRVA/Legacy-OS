@@ -18,11 +18,11 @@ function walk(dir) {
     if ([".git", "node_modules", ".next", "dist", "coverage", ".turbo"].includes(entry.name)) continue;
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(fullPath);
-    else yieldFile(fullPath);
+    else inspectFile(fullPath);
   }
 }
 
-function yieldFile(file) {
+function inspectFile(file) {
   const relative = path.relative(repoRoot, file).replaceAll(path.sep, "/");
   const content = read(file);
   if (content === null || content.includes("\u0000")) return;
@@ -48,7 +48,7 @@ function yieldFile(file) {
 
 walk(repoRoot);
 
-auto packageJson = read(path.join(process.cwd(), "package.json"));
+const packageJson = read(path.join(process.cwd(), "package.json"));
 if (packageJson && /"[^\"]+"\s*:\s*"latest"/.test(packageJson)) {
   findings.push("apps/web/package.json: floating 'latest' dependency detected");
 }
@@ -58,7 +58,7 @@ if (fs.existsSync(path.join(process.cwd(), "middleware.ts"))) {
 }
 
 if (findings.length) {
-  console.error("Security/deprecation gate failed:");
+  console.error("Security and deprecation gate failed:");
   for (const finding of findings) console.error(`- ${finding}`);
   process.exit(1);
 }
