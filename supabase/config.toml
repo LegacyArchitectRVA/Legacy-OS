@@ -1,4 +1,9 @@
 project_id = "legacy-os"
 
+[api]
+port = 55431
+
 [db]
+port = 55432
+shadow_port = 55430
 major_version = 17
