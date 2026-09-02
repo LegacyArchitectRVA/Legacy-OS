@@ -3,6 +3,7 @@ import path from "node:path";
 
 const repoRoot = path.resolve(process.cwd(), "../..");
 const findings = [];
+const floatingLatestDependencyPattern = /"[^"]+"\s*:\s*"latest"/;
 
 function read(file) {
   try {
@@ -49,7 +50,7 @@ function inspectFile(file) {
 walk(repoRoot);
 
 const packageJson = read(path.join(process.cwd(), "package.json"));
-if (packageJson && /"[^"]+"\s*:\s*"latest"/.test(packageJson)) {
+if (packageJson && floatingLatestDependencyPattern.test(packageJson)) {
   findings.push("apps/web/package.json: floating 'latest' dependency detected");
 }
 
