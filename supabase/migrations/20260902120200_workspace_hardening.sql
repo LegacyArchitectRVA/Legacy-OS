@@ -31,23 +31,6 @@ grant select, insert, update, delete on table public.workspaces, public.workspac
   public.business_profiles, public.knowledge_documents, public.sops, public.ai_memories to authenticated;
 grant select, insert on table public.activity_logs to authenticated;
 
-create or replace function private.user_can_access_workspace(target_workspace_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1 from public.workspaces w
-    where w.id = target_workspace_id and w.owner_id = (select auth.uid())
-  )
-  or exists (
-    select 1 from public.workspace_members wm
-    where wm.workspace_id = target_workspace_id and wm.user_id = (select auth.uid())
-  );
-$$;
-
 -- Remove the prior policy set so this migration is safely repeatable.
 drop policy if exists "workspace members can read their workspace" on public.workspaces;
 drop policy if exists "users can create their own workspaces" on public.workspaces;
