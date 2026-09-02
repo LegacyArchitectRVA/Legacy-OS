@@ -3,7 +3,7 @@ import RecallComposer from "./RecallComposer";
 import RecallSearch from "./RecallSearch";
 import RecallAnalysis from "./RecallAnalysis";
 import MemoryRecreation from "../../components/MemoryRecreation";
-import { getRecallUserId, listRecallMemories } from "../../lib/recall-store";
+import { getRecallUserId, listRecallMemories } from "../../../lib/recall-store";
 
 const intelligenceLabels = { known: "Known", reconstructed: "Reconstructed", inferred: "Inferred", unknown: "Unknown" } as const;
 
