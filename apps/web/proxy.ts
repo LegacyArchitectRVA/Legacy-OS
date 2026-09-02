@@ -30,8 +30,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin")) {
-    const admins = (process.env.LEGACYOS_ADMIN_EMAILS ?? "").split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
-    if (!user?.email || !admins.includes(user.email.toLowerCase())) {
+    const admins = (process.env.LEGACYOS_ADMIN_EMAILS ?? "")
+      .split(",")
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    if (!user?.email || !user.email_confirmed_at || !admins.includes(user.email.toLowerCase())) {
       return new NextResponse("Forbidden", { status: 403 });
     }
   }
