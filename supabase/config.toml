@@ -1,0 +1,4 @@
+project_id = "legacy-os"
+
+[db]
+major_version = 17
