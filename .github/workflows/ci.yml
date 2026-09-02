@@ -36,6 +36,9 @@ jobs:
       - name: Dependency audit
         run: npm audit --audit-level=moderate
 
+      - name: Security and deprecation gate
+        run: npm run security
+
       - name: Verify workspace
         run: npm run typecheck
 
