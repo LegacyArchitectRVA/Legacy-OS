@@ -18,10 +18,11 @@ export async function POST(request: Request) {
   try {
     const memories = await listRecallMemories(undefined, userId);
     const personId = normalizePerson(body.personId);
-    const related = memories.filter((memory) => memory.people.some((person) => normalizePerson(person) === personId));
+    const related = memories.filter((memory) => (memory.people ?? []).some((person) => normalizePerson(person) === personId));
     if (!related.length) return NextResponse.json({ error: "No preserved memories were found for this person." }, { status: 404 });
 
-    const displayName = related.flatMap((memory) => memory.people).find((person) => normalizePerson(person) === personId) ?? body.personId.trim();
+    const displayName = related.flatMap((memory) => memory.people ?? []).find((person): person is string => typeof person === "string" && normalizePerson(person) === personId) ?? body.personId.trim();
+    const prompt = body.prompt.trim();
     const evidence = (await Promise.all(related.map((memory) => listRecallEvidence(memory.id, userId)))).flat();
     const sources: RecreationSource[] = [
       ...related.map((memory) => ({ id: memory.id, type: "memory" as const, title: memory.title, evidence: memory.evidenceClass === "known" ? "verified" as const : memory.evidenceClass === "inferred" ? "inferred" as const : "reconstructed" as const })),
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     ];
     const person: RecreationPerson = { id: personId, displayName, approvedForRecreation: true, sources };
     const scene: RecreationScene | undefined = body.sceneId ? { id: body.sceneId, title: body.sceneId, sourceIds: sources.map((source) => source.id), confidence: related.reduce((sum, memory) => sum + (memory.confidence ?? 0.5), 0) / related.length } : undefined;
-    return NextResponse.json(buildRecreationResponse(person, body.prompt, sources, scene));
+    return NextResponse.json(buildRecreationResponse(person, prompt, sources, scene));
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to build recreation response." }, { status: 500 });
   }
