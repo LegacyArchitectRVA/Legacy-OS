@@ -87,6 +87,7 @@ select lives_ok(
 select throws_ok(
   $$insert into public.knowledge_documents (workspace_id, title) values ('20000000-0000-0000-0000-000000000001', 'Cross Tenant Insert')$$,
   '42501',
+  NULL,
   'member cannot insert into another workspace'
 );
 
@@ -96,15 +97,22 @@ select is((select count(*)::integer from public.knowledge_documents), 1, 'non-me
 select throws_ok(
   $$insert into public.knowledge_documents (workspace_id, title) values ('10000000-0000-0000-0000-000000000001', 'Unauthorized Insert')$$,
   '42501',
+  NULL,
   'non-member cannot insert into another workspace'
 );
 select is((select count(*)::integer from public.workspace_members), 0, 'non-member cannot read another workspace membership');
 
 set local role anon;
-select is((select count(*)::integer from public.workspaces), 0, 'anonymous role cannot read workspaces');
+select throws_ok(
+  $$select count(*) from public.workspaces$$,
+  '42501',
+  NULL,
+  'anonymous role cannot read workspaces'
+);
 select throws_ok(
   $$insert into public.workspaces (name, owner_id) values ('Anonymous Workspace', '00000000-0000-0000-0000-000000000003')$$,
   '42501',
+  NULL,
   'anonymous role cannot create workspaces'
 );
 
