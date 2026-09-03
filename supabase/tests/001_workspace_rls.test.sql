@@ -54,7 +54,7 @@ select ok(
   exists (
     select 1 from pg_proc
     where oid = 'private.user_can_access_workspace(uuid)'::regprocedure
-      and proconfig @> array['search_path=']
+      and proconfig @> array['search_path=""']
   ),
   'workspace access helper uses an empty search_path'
 );
