@@ -1,16 +1,35 @@
 -- Canonical LegacyOS workspace foundation.
--- This migration is standalone because the earlier 001-003 migrations belong to
--- the retired organization model and do not create the workspace tables.
+-- The retired 001 migration may already have created a minimal workspaces table.
+-- Reconcile that table before creating the remaining workspace model.
 
 create extension if not exists "uuid-ossp";
 
 create table if not exists public.workspaces (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
-  owner_id uuid not null references auth.users(id) on delete restrict,
+  owner_id uuid references auth.users(id) on delete restrict,
   industry text,
   created_at timestamptz not null default now()
 );
+
+alter table public.workspaces add column if not exists owner_id uuid;
+alter table public.workspaces add column if not exists industry text;
+alter table public.workspaces alter column created_at set default now();
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.workspaces WHERE owner_id IS NULL) THEN
+    RAISE EXCEPTION 'Cannot enforce workspaces.owner_id NOT NULL: existing workspace rows require owner assignment before this migration can complete';
+  END IF;
+  ALTER TABLE public.workspaces ALTER COLUMN owner_id SET NOT NULL;
+END
+$$;
+
+alter table public.workspaces
+  drop constraint if exists workspaces_owner_id_fkey;
+alter table public.workspaces
+  add constraint workspaces_owner_id_fkey
+  foreign key (owner_id) references auth.users(id) on delete restrict;
 
 create table if not exists public.workspace_members (
   id uuid primary key default uuid_generate_v4(),
