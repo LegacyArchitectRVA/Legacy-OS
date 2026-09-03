@@ -29,5 +29,8 @@ jobs:
       - name: Start local database
         run: supabase start -x studio,imgproxy,edge-runtime,vector,logflare
 
+      - name: Lint database
+        run: supabase db lint
+
       - name: Run pgTAP database tests
         run: supabase test db
