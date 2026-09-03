@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(20);
 
 -- Test users are transaction-scoped and are rolled back with this test.
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data)
@@ -46,6 +46,27 @@ select ok(
   ),
   'anon has no table grants on knowledge_documents'
 );
+select ok(
+  (select prosecdef from pg_proc where oid = 'private.user_can_access_workspace(uuid)'::regprocedure),
+  'workspace access helper is SECURITY DEFINER'
+);
+select ok(
+  exists (
+    select 1 from pg_proc
+    where oid = 'private.user_can_access_workspace(uuid)'::regprocedure
+      and proconfig @> array['search_path=""']
+  ),
+  'workspace access helper uses an empty search_path'
+);
+select ok(
+  not exists (
+    select 1 from information_schema.role_routine_grants
+    where specific_schema = 'private'
+      and routine_name = 'user_can_access_workspace'
+      and grantee = 'anon'
+  ),
+  'anon cannot execute the workspace access helper'
+);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
@@ -66,6 +87,7 @@ select lives_ok(
 select throws_ok(
   $$insert into public.knowledge_documents (workspace_id, title) values ('20000000-0000-0000-0000-000000000001', 'Cross Tenant Insert')$$,
   '42501',
+  NULL,
   'member cannot insert into another workspace'
 );
 
@@ -75,15 +97,22 @@ select is((select count(*)::integer from public.knowledge_documents), 1, 'non-me
 select throws_ok(
   $$insert into public.knowledge_documents (workspace_id, title) values ('10000000-0000-0000-0000-000000000001', 'Unauthorized Insert')$$,
   '42501',
+  NULL,
   'non-member cannot insert into another workspace'
 );
 select is((select count(*)::integer from public.workspace_members), 0, 'non-member cannot read another workspace membership');
 
 set local role anon;
-select is((select count(*)::integer from public.workspaces), 0, 'anonymous role cannot read workspaces');
+select throws_ok(
+  $$select count(*) from public.workspaces$$,
+  '42501',
+  NULL,
+  'anonymous role cannot read workspaces'
+);
 select throws_ok(
   $$insert into public.workspaces (name, owner_id) values ('Anonymous Workspace', '00000000-0000-0000-0000-000000000003')$$,
   '42501',
+  NULL,
   'anonymous role cannot create workspaces'
 );
 
