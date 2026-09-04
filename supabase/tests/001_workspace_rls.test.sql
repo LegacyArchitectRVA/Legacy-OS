@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(17);
 
 -- Test users are transaction-scoped and are rolled back with this test.
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data)
