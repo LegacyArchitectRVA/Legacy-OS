@@ -1,5 +1,5 @@
 import { getRecallUserId } from "./recall-store";
-import { getSupabaseServerClient } from "./supabase";
+import { getSupabaseServerClient } from "./supabase/server";
 import type { SuccessorAction, SuccessorActionStateRecord } from "./successor-action-types";
 
 const memoryStore = new Map<string, SuccessorAction>();
@@ -9,7 +9,7 @@ function mapRow(row: Record<string, unknown>): SuccessorAction {
 }
 
 export async function listSuccessorActions(): Promise<SuccessorAction[]> {
-  const supabase = getSupabaseServerClient();
+  const supabase = await getSupabaseServerClient();
   const userId = await getRecallUserId();
   if (supabase && !userId) throw new Error("Authentication is required for successor workspace.");
   if (supabase && userId) {
@@ -21,7 +21,7 @@ export async function listSuccessorActions(): Promise<SuccessorAction[]> {
 }
 
 export async function saveSuccessorAction(action: SuccessorAction): Promise<SuccessorAction> {
-  const supabase = getSupabaseServerClient();
+  const supabase = await getSupabaseServerClient();
   const userId = await getRecallUserId();
   if (supabase && !userId) throw new Error("Authentication is required for successor action persistence.");
   if (supabase && userId) {
