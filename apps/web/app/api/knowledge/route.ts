@@ -5,5 +5,5 @@ export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
   if (!user) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   const body = await request.json();
-  return NextResponse.json({ status: "received", knowledgeItem: body, userId: user.id });
+  return NextResponse.json({ status: "received", knowledgeItem: body });
 }
