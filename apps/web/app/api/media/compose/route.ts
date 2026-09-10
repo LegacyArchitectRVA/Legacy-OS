@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "../../../../lib/supabase/server";
 
 export async function POST(request: Request) {
+  if (!await getAuthenticatedUser()) return NextResponse.json({ status: "denied", note: "Authentication is required." }, { status: 401 });
   const body = await request.json().catch(() => null) as {
     sourceVideoUri?: string;
     voiceAudioUri?: string;
