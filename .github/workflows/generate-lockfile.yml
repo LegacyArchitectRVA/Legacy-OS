@@ -1,0 +1,67 @@
+name: Generate package lockfile
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-lockfile-main
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Pin npm
+        run: npm install --global npm@11.19.1 --no-audit --no-fund
+
+      - name: Generate and publish lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3 4 5; do
+            echo "Lockfile publish attempt ${attempt}/5"
+            git fetch origin main
+            git reset --hard origin/main
+
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+            if git diff --quiet -- package-lock.json; then
+              echo "package-lock.json already matches main."
+              exit 0
+            fi
+
+            git add package-lock.json
+            git commit -m "build: add npm lockfile"
+
+            if git push origin HEAD:main; then
+              echo "Lockfile published successfully."
+              exit 0
+            fi
+
+            echo "Main advanced during publish; retrying from latest main."
+            git reset --hard origin/main
+            sleep $((attempt * 2))
+          done
+
+          echo "Unable to publish package-lock.json after 5 attempts." >&2
+          exit 1
