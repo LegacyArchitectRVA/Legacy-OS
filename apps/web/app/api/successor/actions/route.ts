@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { listSuccessorActions } from "../../../../lib/successor-action-store";
-import { updateSuccessorActionState } from "../../../../lib/successor-action-store";
+import { listSuccessorActions, updateSuccessorActionState } from "../../../../lib/successor-action-store";
 import type { SuccessorActionState } from "../../../../lib/successor-action-types";
 
 const VALID_STATES: SuccessorActionState[] = ["open", "in_progress", "blocked", "complete"];
@@ -9,7 +8,7 @@ const VALID_STATES: SuccessorActionState[] = ["open", "in_progress", "blocked", 
 export async function POST(request: Request) {
   if (!await getAuthenticatedUser()) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   try {
-    const body = await request.json() as { actionId?: string; state?: SuccessorActionState; evidenceConfirmed?: boolean; updatedAt?: string };
+    const body = await request.json() as { actionId?: string; state?: SuccessorActionState; evidenceConfirmed?: boolean };
     if (!body.actionId || !body.state || !VALID_STATES.includes(body.state)) {
       return NextResponse.json({ error: "actionId and a valid state are required." }, { status: 400 });
     }
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
       actionId: body.actionId,
       status: body.state,
       evidenceConfirmed: Boolean(body.evidenceConfirmed),
-      updatedAt: body.updatedAt ?? action.updatedAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     return NextResponse.json({ action: updated });
   } catch {
