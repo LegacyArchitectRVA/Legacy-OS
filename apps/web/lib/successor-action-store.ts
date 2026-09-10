@@ -25,9 +25,36 @@ export async function saveSuccessorAction(action: SuccessorAction): Promise<Succ
   const userId = await getRecallUserId();
   if (supabase && !userId) throw new Error("Authentication is required for successor action persistence.");
   if (supabase && userId) {
-    const { data, error } = await supabase.from("legacy_successor_actions").upsert({ id: action.id, user_id: userId, title: action.title, domain: action.domain, instruction: action.instruction, state: action.state, evidence_required: action.evidenceRequired, evidence_confirmed: Boolean(action.evidenceConfirmed), dependencies: action.dependencies, updated_at: new Date().toISOString() }).select("id,title,domain,instruction,state,evidence_required,evidence_confirmed,dependencies,updated_at").single();
-    if (error) throw new Error(`Successor action persistence failed: ${error.message}`);
-    return mapRow(data);
+    const payload = {
+      title: action.title,
+      domain: action.domain,
+      instruction: action.instruction,
+      state: action.state,
+      evidence_required: action.evidenceRequired,
+      evidence_confirmed: Boolean(action.evidenceConfirmed),
+      dependencies: action.dependencies,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: updated, error: updateError } = await supabase
+      .from("legacy_successor_actions")
+      .update(payload)
+      .eq("id", action.id)
+      .eq("user_id", userId)
+      .select("id,title,domain,instruction,state,evidence_required,evidence_confirmed,dependencies,updated_at")
+      .maybeSingle();
+
+    if (updateError) throw new Error(`Successor action update failed: ${updateError.message}`);
+    if (updated) return mapRow(updated);
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("legacy_successor_actions")
+      .insert({ id: action.id, user_id: userId, ...payload })
+      .select("id,title,domain,instruction,state,evidence_required,evidence_confirmed,dependencies,updated_at")
+      .single();
+
+    if (insertError) throw new Error(`Successor action persistence failed: ${insertError.message}`);
+    return mapRow(inserted);
   }
   memoryStore.set(action.id, action);
   return action;
