@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       actionId: body.actionId,
       status: body.state,
       evidenceConfirmed: Boolean(body.evidenceConfirmed),
-      updatedAt: body.updatedAt,
+      updatedAt: body.updatedAt ?? action.updatedAt ?? new Date().toISOString(),
     });
     return NextResponse.json({ action: updated });
   } catch {
