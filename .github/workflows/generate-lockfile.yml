@@ -45,12 +45,12 @@ jobs:
 
             npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
-            if git diff --quiet -- package-lock.json; then
+            git add -f package-lock.json
+            if git diff --cached --quiet -- package-lock.json; then
               echo "package-lock.json already matches main."
               exit 0
             fi
 
-            git add package-lock.json
             git commit -m "build: add npm lockfile"
 
             if git push origin HEAD:main; then
