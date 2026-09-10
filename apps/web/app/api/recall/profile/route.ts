@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assessReconstructionReadiness, type PersonReconstructionProfile } from "../../../lib/person-reconstruction";
-import { getAuthenticatedUser } from "../../../lib/supabase/server";
+import { getAuthenticatedUser } from "../../../../lib/supabase/server";
 
 const profiles = new Map<string, PersonReconstructionProfile>();
 
