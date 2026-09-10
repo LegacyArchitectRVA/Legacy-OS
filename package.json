@@ -4,7 +4,7 @@
   "private": true,
   "description": "AI-powered continuity operating system for life, family, and business.",
   "workspaces": ["apps/*", "packages/*"],
-  "packageManager": "npm@10.9.8",
+  "packageManager": "npm@11.19.1",
   "engines": { "node": ">=22.0.0" },
   "scripts": {
     "dev": "turbo dev",
