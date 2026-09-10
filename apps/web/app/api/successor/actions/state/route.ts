@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { getSuccessorActionState, setSuccessorActionState } from "../../../../../lib/successor-state";
 import { listSuccessorActions } from "../../../../../lib/successor-action-store";
 import type { SuccessorActionState } from "../../../../../lib/successor-action-types";
+import { getAuthenticatedUser } from "../../../../../lib/supabase/server";
 
 const statuses: SuccessorActionState[] = ["open", "in_progress", "blocked", "complete"];
 
 export async function GET(request: Request) {
+  if (!await getAuthenticatedUser()) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   const actionId = new URL(request.url).searchParams.get("actionId");
   if (!actionId) return NextResponse.json({ error: "actionId is required." }, { status: 400 });
   try { return NextResponse.json(await getSuccessorActionState(actionId)); }
@@ -13,6 +15,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!await getAuthenticatedUser()) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   try {
     const body = await request.json() as { actionId?: string; status?: SuccessorActionState; evidenceConfirmed?: boolean; notes?: string };
     if (!body.actionId || !body.status || !statuses.includes(body.status)) return NextResponse.json({ error: "actionId and a valid status are required." }, { status: 400 });
