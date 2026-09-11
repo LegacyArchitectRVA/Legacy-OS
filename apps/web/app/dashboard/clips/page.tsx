@@ -103,9 +103,10 @@ export default function ClipsPage() {
   };
 
   useEffect(() => {
-    void loadClips();
-    // loadClips is intentionally stable for the lifetime of this page.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = window.setTimeout(() => {
+      void loadClips();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const updateClip = async (clip: Clip, values: Partial<Clip>) => {
