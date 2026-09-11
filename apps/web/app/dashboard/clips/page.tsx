@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -67,9 +67,8 @@ export default function ClipsPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-
   const loadClips = async () => {
+    const supabase = getSupabaseBrowserClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       setError("You must be signed in to view your clips.");
@@ -112,6 +111,7 @@ export default function ClipsPage() {
   const updateClip = async (clip: Clip, values: Partial<Clip>) => {
     setSavingId(clip.id);
     setError(null);
+    const supabase = getSupabaseBrowserClient();
     const table = supabase.from("legacy_os_clips") as unknown as ClipTable;
     const { error: updateError } = await table.update(values).eq("id", clip.id);
     if (updateError) setError(updateError.message);
@@ -123,6 +123,7 @@ export default function ClipsPage() {
     if (!window.confirm(`Delete “${clip.title}”? This permanently removes the saved clip.`)) return;
     setSavingId(clip.id);
     setError(null);
+    const supabase = getSupabaseBrowserClient();
     const table = supabase.from("legacy_os_clips") as unknown as ClipTable;
     const { error: deleteError } = await table.delete().eq("id", clip.id);
     if (deleteError) {
