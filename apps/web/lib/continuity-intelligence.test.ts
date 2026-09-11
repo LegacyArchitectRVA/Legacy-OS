@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { buildContinuityIntelligence } from "./continuity-intelligence";
+import { buildContinuityIntelligence } from "./continuity-intelligence.ts";
 import type { ContinuityPillarCoverage } from "./continuity";
 import type { RecallMemoryRecord } from "./recall";
 
