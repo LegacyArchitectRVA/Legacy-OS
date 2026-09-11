@@ -6,12 +6,14 @@ import { HandoffReport } from "./HandoffReport";
 interface HandoffReadiness { ready: boolean; completionPercent: number; openActions: number; blockedActions: number; inProgressActions: number; completedActions: number; unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>; evidenceOutstanding: Array<{ id: string; title: string; domain: string }>; }
 interface Pillar { pillar_key: string; name: string; coverage_score: number; status: "needs_attention" | "in_progress" | "ready"; matched_memories?: number; }
 interface EngineAction { id: string; title: string; domain: string; reason: string; priority: "critical" | "important" | "routine"; }
+interface Intelligence { overallRisk: "critical" | "elevated" | "watch" | "low"; confidenceScore: number; freshnessScore: number; evidenceQualityScore: number; staleEvidenceCount: number; topRisks: Array<{ pillarKey: string; level: string; score: number; reason: string; nextAction: string }>; nextBestAction: string | null; }
 
 export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionId: string) => void }) {
   const [data, setData] = useState<HandoffReadiness | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [engineActions, setEngineActions] = useState<EngineAction[]>([]);
   const [overallScore, setOverallScore] = useState(0);
+  const [intelligence, setIntelligence] = useState<Intelligence | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -24,6 +26,7 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
       if (Array.isArray(engine?.pillars)) setPillars(engine.pillars);
       if (Array.isArray(engine?.actions)) setEngineActions(engine.actions);
       if (typeof engine?.readiness?.overall_score === "number") setOverallScore(engine.readiness.overall_score);
+      if (engine?.intelligence && typeof engine.intelligence.confidenceScore === "number") setIntelligence(engine.intelligence);
     }).catch(() => undefined);
     return () => { active = false; };
   }, []);
@@ -33,6 +36,7 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
   const dependencyIssues = data.unresolvedDependencies.map((issue) => ({ key: `dependency:${issue.actionId}:${issue.dependencyId}`, actionId: issue.actionId, label: `Waiting on ${issue.dependencyId}` }));
   const evidenceIssues = data.evidenceOutstanding.map((action) => ({ key: `evidence:${action.id}`, actionId: action.id, label: `Evidence needed: ${action.title}` }));
   const issues = [...dependencyIssues, ...evidenceIssues];
+  const riskLabel = intelligence?.overallRisk === "critical" ? "Critical continuity risk" : intelligence?.overallRisk === "elevated" ? "Elevated continuity risk" : intelligence?.overallRisk === "watch" ? "Continuity watch" : "Low continuity risk";
 
   return <>
     <section className={`rounded-2xl border p-5 ${data.ready ? "border-emerald-400/25 bg-emerald-400/[0.04]" : "border-[#e7b84b]/25 bg-[#e7b84b]/[0.04]"}`}>
@@ -42,7 +46,10 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
 
     <section className="mt-6 rounded-2xl border border-[#e7b84b]/20 bg-gradient-to-br from-[#171207] to-[#0b0b0b] p-5">
       <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Continuity Engine</p><h2 className="mt-1 text-xl font-semibold">What is actually covered?</h2><p className="mt-1 text-sm text-white/40">Calculated from stored continuity evidence.</p></div><div className="text-right"><div className="text-3xl font-semibold">{overallScore}%</div><div className="text-xs text-white/35">overall readiness</div></div></div>
+      {intelligence && <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-xl border border-white/10 p-3"><p className="text-[11px] uppercase tracking-wide text-white/35">Risk</p><p className="mt-1 text-sm font-semibold">{riskLabel}</p></div><div className="rounded-xl border border-white/10 p-3"><p className="text-[11px] uppercase tracking-wide text-white/35">Confidence</p><p className="mt-1 text-sm font-semibold">{intelligence.confidenceScore}%</p></div><div className="rounded-xl border border-white/10 p-3"><p className="text-[11px] uppercase tracking-wide text-white/35">Evidence quality</p><p className="mt-1 text-sm font-semibold">{intelligence.evidenceQualityScore}%</p></div><div className="rounded-xl border border-white/10 p-3"><p className="text-[11px] uppercase tracking-wide text-white/35">Stale evidence</p><p className="mt-1 text-sm font-semibold">{intelligence.staleEvidenceCount}</p></div></div>}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{pillars.map((pillar) => <div key={pillar.pillar_key} className={`rounded-xl border p-3 ${pillar.status === "ready" ? "border-emerald-400/20 bg-emerald-400/[0.04]" : pillar.status === "in_progress" ? "border-blue-400/20 bg-blue-400/[0.04]" : "border-red-400/20 bg-red-400/[0.04]"}`}><div className="flex justify-between gap-2"><span className="text-sm font-medium">{pillar.name}</span><span className="text-sm font-semibold">{pillar.coverage_score}%</span></div><div className="mt-2 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-[#e7b84b]" style={{ width: `${pillar.coverage_score}%` }} /></div><p className="mt-2 text-[11px] text-white/35">{pillar.matched_memories ?? 0} evidence items</p></div>)}</div>
+      {intelligence?.topRisks.length ? <div className="mt-4 border-t border-white/10 pt-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">Highest continuity risks</p><span className="text-xs text-white/30">{intelligence.topRisks.length} ranked</span></div><div className="mt-2 grid gap-2">{intelligence.topRisks.slice(0, 3).map((risk) => <div key={risk.pillarKey} className="rounded-lg border border-white/10 px-3 py-2"><div className="flex items-center justify-between gap-3"><span className="text-sm">{risk.reason}</span><span className="text-[11px] uppercase text-[#e7b84b]">{risk.level}</span></div><p className="mt-1 text-xs text-white/35">Next: {risk.nextAction}</p></div>)}</div></div> : null}
+      {intelligence?.nextBestAction && <div className="mt-4 rounded-lg border border-[#e7b84b]/20 bg-[#e7b84b]/[0.04] px-3 py-2"><p className="text-[11px] uppercase tracking-wide text-[#e7b84b]">Next best action</p><p className="mt-1 text-sm text-white/70">{intelligence.nextBestAction}</p></div>}
       {engineActions.length > 0 && <div className="mt-4 border-t border-white/10 pt-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">Next gaps</p><span className="text-xs text-white/30">{engineActions.length} generated</span></div><div className="mt-2 grid gap-2">{engineActions.slice(0, 4).map((action) => <div key={action.id} className="rounded-lg border border-white/10 px-3 py-2"><div className="flex items-center justify-between gap-3"><span className="text-sm">{action.title}</span><span className="text-[11px] uppercase text-[#e7b84b]">{action.priority}</span></div><p className="mt-1 text-xs text-white/35">{action.domain} · {action.reason}</p></div>)}</div></div>}
     </section>
 
