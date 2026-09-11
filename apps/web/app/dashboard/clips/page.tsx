@@ -70,8 +70,6 @@ export default function ClipsPage() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
 
   const loadClips = async () => {
-    setLoading(true);
-    setError(null);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       setError("You must be signed in to view your clips.");
@@ -107,6 +105,8 @@ export default function ClipsPage() {
 
   useEffect(() => {
     void loadClips();
+    // loadClips is intentionally stable for the lifetime of this page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateClip = async (clip: Clip, values: Partial<Clip>) => {
