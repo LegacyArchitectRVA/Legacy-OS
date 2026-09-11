@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type ClipKind = "audio" | "video";
 
@@ -10,12 +11,20 @@ function formatTime(seconds: number) {
   return `${minutes}:${remainder}`;
 }
 
+function extensionForMime(mime: string, kind: ClipKind) {
+  if (mime.includes("mp4")) return kind === "video" ? "mp4" : "m4a";
+  if (mime.includes("mpeg")) return "mp3";
+  return "webm";
+}
+
 export default function ClipRecorder() {
   const [kind, setKind] = useState<ClipKind>("audio");
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [clipUrl, setClipUrl] = useState<string | null>(null);
   const [clipBlob, setClipBlob] = useState<Blob | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -30,6 +39,7 @@ export default function ClipRecorder() {
 
   const startRecording = async () => {
     setError(null);
+    setSaved(false);
     setClipUrl(null);
     setClipBlob(null);
     chunksRef.current = [];
@@ -44,7 +54,11 @@ export default function ClipRecorder() {
         kind === "video" ? { audio: true, video: true } : { audio: true },
       );
       streamRef.current = stream;
-      const recorder = new MediaRecorder(stream);
+      const preferredMimeTypes = kind === "video"
+        ? ["video/webm;codecs=vp9,opus", "video/webm"]
+        : ["audio/webm;codecs=opus", "audio/webm"];
+      const mimeType = preferredMimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -75,9 +89,49 @@ export default function ClipRecorder() {
     setRecording(false);
   };
 
+  const saveClip = async () => {
+    if (!clipBlob || saving || saved) return;
+    setSaving(true);
+    setError(null);
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("You must be signed in to save a clip.");
+
+      const extension = extensionForMime(clipBlob.type, kind);
+      const clipId = crypto.randomUUID();
+      const storagePath = `${user.id}/${clipId}.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("legacy-os-clips")
+        .upload(storagePath, clipBlob, { contentType: clipBlob.type, upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase.from("legacy_os_clips").insert({
+        id: clipId,
+        user_id: user.id,
+        title: kind === "video" ? "Video clip" : "Voice clip",
+        kind,
+        storage_path: storagePath,
+        duration_seconds: seconds,
+      });
+      if (insertError) {
+        await supabase.storage.from("legacy-os-clips").remove([storagePath]);
+        throw insertError;
+      }
+
+      setSaved(true);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "The clip could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const shareClip = async () => {
     if (!clipBlob) return;
-    const extension = kind === "video" ? "webm" : "webm";
+    const extension = extensionForMime(clipBlob.type, kind);
     const file = new File([clipBlob], `legacy-os-clip-${Date.now()}.${extension}`, { type: clipBlob.type });
 
     try {
@@ -100,6 +154,7 @@ export default function ClipRecorder() {
     setClipBlob(null);
     setClipUrl(null);
     setSeconds(0);
+    setSaved(false);
     setError(null);
   };
 
@@ -141,7 +196,10 @@ export default function ClipRecorder() {
         <div className="mt-5 space-y-3 rounded-lg border p-4">
           {kind === "video" ? <video src={clipUrl} controls className="max-h-80 w-full rounded-md" /> : <audio src={clipUrl} controls className="w-full" />}
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={shareClip} className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background">Share clip</button>
+            <button type="button" onClick={saveClip} disabled={saving || saved} className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60">
+              {saved ? "Saved to Legacy OS" : saving ? "Saving…" : "Save to Legacy OS"}
+            </button>
+            <button type="button" onClick={shareClip} className="rounded-lg border px-4 py-2 text-sm font-medium">Share clip</button>
             <button type="button" onClick={discardClip} className="rounded-lg border px-4 py-2 text-sm">Discard</button>
           </div>
         </div>
