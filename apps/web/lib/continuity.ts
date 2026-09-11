@@ -3,7 +3,7 @@ export type ContinuityPillarKey = "digital_life" | "financial_assets" | "househo
 
 export interface ContinuityGap { domain: ContinuityDomain; severity: "critical" | "important" | "watch"; title: string; reason: string; }
 export interface ContinuitySnapshot { totalMemories: number; domains: ContinuityDomain[]; gaps: ContinuityGap[]; readiness: number; }
-export interface ContinuityPillarCoverage { pillarKey: ContinuityPillarKey; coverageScore: number; status: "needs_attention" | "in_progress" | "ready"; matchedMemories: number; }
+export interface ContinuityPillarCoverage { pillarKey: ContinuityPillarKey; name?: string; coverageScore: number; status: "needs_attention" | "in_progress" | "ready"; matchedMemories: number; }
 
 const DOMAIN_KEYWORDS: Record<ContinuityDomain, string[]> = {
   personal: ["personal", "identity", "life"],
