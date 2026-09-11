@@ -18,10 +18,11 @@ jobs:
           from pathlib import Path
           path = Path('supabase/tests/001_workspace_rls.test.sql')
           text = path.read_text()
-          text = text.replace(
-              "select is((select title from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 'Private Document', 'cross-tenant document remains unchanged');",
-              "select is((select title from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 'Private Document', 'cross-tenant document remains unchanged');"
-          )
+          old = "select is((select count(*)::integer from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 0, 'member cannot delete another workspace document');"
+          new = "select is((select count(*)::integer from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 1, 'cross-tenant document remains after denied delete');"
+          if old not in text:
+              raise SystemExit('cross-tenant delete assertion not found')
+          text = text.replace(old, new, 1)
           marker = '-- Anonymous has no direct table access.\n'
           if marker not in text:
               raise SystemExit('anonymous test marker not found')
@@ -30,7 +31,7 @@ jobs:
           path.write_text(prefix + tail)
           PY
           git diff --check
-          grep -q "cross-tenant document remains unchanged" supabase/tests/001_workspace_rls.test.sql
+          grep -q "cross-tenant document remains after denied delete" supabase/tests/001_workspace_rls.test.sql
           grep -q "anon cannot select workspace" supabase/tests/001_workspace_rls.test.sql
       - name: Commit and push
         run: |
