@@ -22,7 +22,14 @@ type Clip = {
   duration_seconds: number | null;
   pillar_key: PillarKey | null;
   life_manual_section: string | null;
+  successor_action_id: string | null;
   created_at: string;
+};
+
+type SuccessorAction = {
+  id: string;
+  title: string;
+  state: "open" | "in_progress" | "blocked" | "complete";
 };
 
 type ClipTable = {
@@ -62,6 +69,7 @@ function formatDate(value: string) {
 
 export default function ClipsPage() {
   const [clips, setClips] = useState<Clip[]>([]);
+  const [actions, setActions] = useState<SuccessorAction[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -78,7 +86,7 @@ export default function ClipsPage() {
 
     const table = supabase.from("legacy_os_clips") as unknown as ClipTable;
     const result = await new Promise<{ data: Clip[] | null; error: Error | null }>((resolve) => {
-      table.select("id,title,kind,storage_path,duration_seconds,pillar_key,life_manual_section,created_at")
+      table.select("id,title,kind,storage_path,duration_seconds,pillar_key,life_manual_section,successor_action_id,created_at")
         .order("created_at", { ascending: false })
         .then(resolve);
     });
@@ -91,6 +99,18 @@ export default function ClipsPage() {
 
     setClips(result.data ?? []);
     setLoading(false);
+
+    const handoffResponse = await fetch("/api/successor/handoff", { cache: "no-store" });
+    if (handoffResponse.ok) {
+      const handoff = await handoffResponse.json() as { openActions?: SuccessorAction[]; blockedActions?: SuccessorAction[]; inProgressActions?: SuccessorAction[]; completedActions?: SuccessorAction[] };
+      const availableActions = [
+        ...(handoff.openActions ?? []),
+        ...(handoff.inProgressActions ?? []),
+        ...(handoff.blockedActions ?? []),
+        ...(handoff.completedActions ?? []),
+      ];
+      setActions(availableActions);
+    }
 
     const signedEntries = await Promise.all((result.data ?? []).map(async (clip) => {
       if (!clip.storage_path) return null;
@@ -191,7 +211,7 @@ export default function ClipsPage() {
                   <p className="mt-4 text-sm text-muted-foreground">Secure playback link unavailable. Refresh to request a new one.</p>
                 )}
 
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <label className="text-sm">
                     <span className="mb-1 block font-medium">Continuity pillar</span>
                     <select
@@ -202,6 +222,18 @@ export default function ClipsPage() {
                     >
                       <option value="">Unassigned</option>
                       {PILLARS.map((pillar) => <option key={pillar.key} value={pillar.key}>{pillar.label}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block font-medium">Successor action</span>
+                    <select
+                      value={clip.successor_action_id ?? ""}
+                      disabled={savingId === clip.id}
+                      onChange={(event) => void updateClip(clip, { successor_action_id: event.target.value || null })}
+                      className="w-full rounded-md border bg-background px-3 py-2"
+                    >
+                      <option value="">No action linked</option>
+                      {actions.map((action) => <option key={action.id} value={action.id}>{action.title} · {action.state.replace("_", " ")}</option>)}
                     </select>
                   </label>
                   <label className="text-sm">
