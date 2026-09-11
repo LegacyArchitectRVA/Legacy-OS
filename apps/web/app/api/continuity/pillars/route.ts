@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateContinuityPillar } from "../../../../../lib/continuity-pillar-store";
+import { updateContinuityPillar } from "../../../../lib/continuity-pillar-store";
 
 export async function PATCH(request: Request) {
   try {
