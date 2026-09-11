@@ -12,6 +12,7 @@ export default function Dashboard() {
         <Link href="/dashboard/continuity" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Continuity Readiness</div><p className="mt-2 text-sm text-muted-foreground">See coverage, readiness, and continuity gaps.</p></Link>
         <Link href="/dashboard/visual-recreation" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Visual Recreation</div><p className="mt-2 text-sm text-muted-foreground">Explore reconstructed people, business, digital systems, assets, and timeline.</p></Link>
         <Link href="/dashboard/successor" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Successor Mode</div><p className="mt-2 text-sm text-muted-foreground">Turn the continuity record into a successor-ready set of actions, unknowns, and evidence warnings.</p></Link>
+        <Link href="/dashboard/clips" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Clip Library</div><p className="mt-2 text-sm text-muted-foreground">Review private voice and video clips and organize them into your continuity record.</p></Link>
       </div>
       <div className="mt-8 max-w-3xl"><ClipRecorder /></div>
     </main>
