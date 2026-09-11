@@ -4,6 +4,8 @@ import path from "node:path";
 const repoRoot = path.resolve(process.cwd(), "../..");
 const findings = [];
 const floatingLatestDependencyPattern = /"[^"]+"\s*:\s*"latest"/;
+const actionUsePattern = /^\s*-?\s*uses:\s*([^\s#]+)\s*(?:#.*)?$/gm;
+const immutableShaPattern = /^[^/]+\/[^@]+@[0-9a-f]{40}$/i;
 
 function read(file) {
   try {
@@ -44,6 +46,19 @@ function inspectFile(file) {
 
   if (/codeql-action\/(?:init|analyze|autobuild)@v3\b/.test(content)) {
     findings.push(`${relative}: CodeQL Action v3 detected; v4 is the maintained major`);
+  }
+
+  if (relative.startsWith(".github/workflows/") && /\.ya?ml$/.test(relative)) {
+    for (const match of content.matchAll(actionUsePattern)) {
+      const reference = match[1];
+      if (!reference.startsWith("./") && !immutableShaPattern.test(reference)) {
+        findings.push(`${relative}: action reference is not pinned to a full commit SHA (${reference})`);
+      }
+    }
+
+    if (!/^permissions:\s*$/m.test(content)) {
+      findings.push(`${relative}: workflow permissions are not explicitly declared`);
+    }
   }
 }
 
