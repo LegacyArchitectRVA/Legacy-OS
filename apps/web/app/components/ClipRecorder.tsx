@@ -5,6 +5,19 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type ClipKind = "audio" | "video";
 
+type LegacyOsClipInsert = {
+  id: string;
+  user_id: string;
+  title: string;
+  kind: ClipKind;
+  storage_path: string;
+  duration_seconds: number;
+};
+
+type LegacyOsClipTable = {
+  insert: (values: LegacyOsClipInsert) => Promise<{ error: { message: string } | null }>;
+};
+
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
   const remainder = (seconds % 60).toString().padStart(2, "0");
@@ -108,7 +121,8 @@ export default function ClipRecorder() {
         .upload(storagePath, clipBlob, { contentType: clipBlob.type, upsert: false });
       if (uploadError) throw uploadError;
 
-      const { error: insertError } = await supabase.from("legacy_os_clips").insert({
+      const clipTable = supabase.from("legacy_os_clips") as unknown as LegacyOsClipTable;
+      const { error: insertError } = await clipTable.insert({
         id: clipId,
         user_id: user.id,
         title: kind === "video" ? "Video clip" : "Voice clip",
@@ -118,7 +132,7 @@ export default function ClipRecorder() {
       });
       if (insertError) {
         await supabase.storage.from("legacy-os-clips").remove([storagePath]);
-        throw insertError;
+        throw new Error(insertError.message);
       }
 
       setSaved(true);
