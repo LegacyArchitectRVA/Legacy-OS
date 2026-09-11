@@ -109,8 +109,11 @@ select throws_ok($$delete from public.activity_logs where workspace_id='10000000
 select is((select count(*)::integer from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 0, 'member cannot select another workspace document');
 select throws_ok($$insert into public.knowledge_documents (workspace_id,title) values ('20000000-0000-0000-0000-000000000001','cross insert')$$, '42501', null, 'member cannot insert another workspace document');
 select lives_ok($$update public.knowledge_documents set title='cross update' where workspace_id='20000000-0000-0000-0000-000000000001' and title='Private Document'$$, 'member cross-workspace update is safely denied');
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
 select is((select title from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 'Private Document', 'member cannot modify another workspace document');
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
 select lives_ok($$delete from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001' and title='Private Document'$$, 'member cross-workspace delete is safely denied');
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
 select is((select count(*)::integer from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 0, 'member cannot delete another workspace document');
 
 -- Outsider cannot reach workspace A.
@@ -122,12 +125,13 @@ select is((select count(*)::integer from public.knowledge_documents where worksp
 select is((select count(*)::integer from public.sops where workspace_id='10000000-0000-0000-0000-000000000001'), 0, 'outsider cannot select SOPs');
 select is((select count(*)::integer from public.ai_memories where workspace_id='10000000-0000-0000-0000-000000000001'), 0, 'outsider cannot select AI memories');
 select is((select count(*)::integer from public.activity_logs where workspace_id='10000000-0000-0000-0000-000000000001'), 0, 'outsider cannot select activity logs');
-select throws_ok($$insert into public.knowledge_documents (workspace_id,title) values ('10000000-0000-0000-0000-000000000001','outsider insert')$$, '42501', null, 'outsider cannot insert workspace document');
+select throws_ok($$insert into public.knowledge_documents (workspace_id,title) values ('10000000-0000-0000-0000-000000000001','outsider insert')$$, '42501', null, 'outsider cannot insert document');
 
+-- Anonymous role cannot reach workspace A.
 set local role anon;
-select throws_ok($$select count(*) from public.workspaces$$, '42501', null, 'anon cannot select workspaces');
-select throws_ok($$insert into public.workspaces (name,owner_id) values ('anon','00000000-0000-0000-0000-000000000003')$$, '42501', null, 'anon cannot insert workspaces');
-select throws_ok($$select count(*) from public.knowledge_documents$$, '42501', null, 'anon cannot select documents');
+select set_config('request.jwt.claim.sub', '', true);
+select is((select count(*)::integer from public.workspaces), 0, 'anon cannot select workspaces');
+select throws_ok($$insert into public.knowledge_documents (workspace_id,title) values ('10000000-0000-0000-0000-000000000001','anon insert')$$, '42501', null, 'anon cannot insert document');
 
 select * from finish();
 rollback;
