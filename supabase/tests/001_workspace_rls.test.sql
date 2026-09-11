@@ -84,11 +84,11 @@ select is((select count(*)::integer from public.workspace_members), 1, 'member c
 select lives_ok($$insert into public.workspaces (name,owner_id) values ('Member Workspace','00000000-0000-0000-0000-000000000002')$$, 'member can create own workspace');
 select is((select count(*)::integer from public.workspaces where owner_id='00000000-0000-0000-0000-000000000002'), 1, 'member can read own created workspace');
 select is((select count(*)::integer from public.workspaces where id='10000000-0000-0000-0000-000000000001' and name='member update'), 0, 'member cannot update workspace');
-select is((update public.workspaces set name='member update' where id='10000000-0000-0000-0000-000000000001')::integer, 0, 'member update affects no protected workspace rows');
-select is((delete from public.workspaces where id='10000000-0000-0000-0000-000000000001')::integer, 0, 'member delete affects no protected workspace rows');
+select is((with updated as (update public.workspaces set name='member update' where id='10000000-0000-0000-0000-000000000001' returning 1) select count(*)::integer from updated), 0, 'member update affects no protected workspace rows');
+select is((with deleted as (delete from public.workspaces where id='10000000-0000-0000-0000-000000000001' returning 1) select count(*)::integer from deleted), 0, 'member delete affects no protected workspace rows');
 select throws_ok($$insert into public.workspace_members (workspace_id,user_id,role) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003','member')$$, '42501', null, 'member cannot insert membership');
-select is((update public.workspace_members set role='admin' where workspace_id='10000000-0000-0000-0000-000000000001' and user_id='00000000-0000-0000-0000-000000000002')::integer, 0, 'member cannot update membership');
-select is((delete from public.workspace_members where workspace_id='10000000-0000-0000-0000-000000000001' and user_id='00000000-0000-0000-0000-000000000002')::integer, 0, 'member cannot delete membership');
+select is((with updated as (update public.workspace_members set role='admin' where workspace_id='10000000-0000-0000-0000-000000000001' and user_id='00000000-0000-0000-0000-000000000002' returning 1) select count(*)::integer from updated), 0, 'member cannot update membership');
+select is((with deleted as (delete from public.workspace_members where workspace_id='10000000-0000-0000-0000-000000000001' and user_id='00000000-0000-0000-0000-000000000002' returning 1) select count(*)::integer from deleted), 0, 'member cannot delete membership');
 select lives_ok($$insert into public.knowledge_documents (workspace_id,title) values ('10000000-0000-0000-0000-000000000001','member insert')$$, 'member can insert document');
 select lives_ok($$update public.knowledge_documents set title='member update' where workspace_id='10000000-0000-0000-0000-000000000001' and title='member insert'$$, 'member can update document');
 select lives_ok($$delete from public.knowledge_documents where workspace_id='10000000-0000-0000-0000-000000000001' and title='member update'$$, 'member can delete document');
@@ -105,8 +105,8 @@ select throws_ok($$delete from public.activity_logs where workspace_id='10000000
 -- Cross-tenant protection uses rows that actually exist in the other workspace.
 select is((select count(*)::integer from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001'), 0, 'member cannot select another workspace document');
 select throws_ok($$insert into public.knowledge_documents (workspace_id,title) values ('20000000-0000-0000-0000-000000000001','cross insert')$$, '42501', null, 'member cannot insert another workspace document');
-select is((update public.knowledge_documents set title='cross update' where workspace_id='20000000-0000-0000-0000-000000000001' and title='Private Document')::integer, 0, 'member cannot update another workspace document');
-select is((delete from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001' and title='Private Document')::integer, 0, 'member cannot delete another workspace document');
+select is((with updated as (update public.knowledge_documents set title='cross update' where workspace_id='20000000-0000-0000-0000-000000000001' and title='Private Document' returning 1) select count(*)::integer from updated), 0, 'member cannot update another workspace document');
+select is((with deleted as (delete from public.knowledge_documents where workspace_id='20000000-0000-0000-0000-000000000001' and title='Private Document' returning 1) select count(*)::integer from deleted), 0, 'member cannot delete another workspace document');
 
 -- Outsider cannot reach workspace A.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
