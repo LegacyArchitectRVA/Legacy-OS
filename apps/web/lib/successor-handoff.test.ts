@@ -34,7 +34,7 @@ const evidenceRequired: SuccessorAction = {
 };
 
 const ready = buildSuccessorHandoff([
-  { ...baseAction, state: "complete" },
+  { ...baseAction, state: "complete", evidenceConfirmed: true },
   { ...blockedByDependency, state: "open", dependencies: ["a"] },
 ]);
 assert.equal(ready.ready, true);
@@ -68,9 +68,29 @@ assert.deepEqual(explicitlyBlocked.blockedActions.map((action) => action.id), ["
 assert.equal(explicitlyBlocked.actionReadiness[0].ready, false);
 assert.equal(explicitlyBlocked.actionReadiness[0].reason, "explicitly_blocked");
 
-const completed = buildSuccessorHandoff([{ ...baseAction, state: "complete" }]);
+const completed = buildSuccessorHandoff([{ ...baseAction, state: "complete", evidenceConfirmed: true }]);
 assert.equal(completed.actionReadiness[0].reason, "completed");
+assert.deepEqual(completed.completedActions.map((action) => action.id), ["a"]);
+assert.equal(completed.invalidCompletedActions.length, 0);
 assert.equal(completed.nextAction, null);
+
+const invalidCompletedEvidence = buildSuccessorHandoff([{ ...evidenceRequired, state: "complete", evidenceConfirmed: false }]);
+assert.equal(invalidCompletedEvidence.ready, false);
+assert.deepEqual(invalidCompletedEvidence.completedActions, []);
+assert.deepEqual(invalidCompletedEvidence.invalidCompletedActions.map((action) => action.id), ["c"]);
+assert.equal(invalidCompletedEvidence.completionPercent, 0);
+assert.equal(invalidCompletedEvidence.actionReadiness[0].reason, "completion_invalid");
+assert.equal(invalidCompletedEvidence.actionReadiness[0].evidenceConfirmed, false);
+
+const invalidCompletedDependency = buildSuccessorHandoff([
+  { ...baseAction, state: "open" },
+  { ...blockedByDependency, state: "complete", evidenceConfirmed: true },
+]);
+assert.equal(invalidCompletedDependency.ready, false);
+assert.deepEqual(invalidCompletedDependency.invalidCompletedActions.map((action) => action.id), ["b"]);
+assert.equal(invalidCompletedDependency.completionPercent, 0);
+assert.deepEqual(invalidCompletedDependency.actionReadiness.find((item) => item.actionId === "b")?.unresolvedDependencies, ["a"]);
+assert.equal(invalidCompletedDependency.actionReadiness.find((item) => item.actionId === "b")?.reason, "completion_invalid");
 
 const prioritized = buildSuccessorHandoff([
   { ...baseAction, id: "a", title: "Foundation task" },
