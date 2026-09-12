@@ -15,6 +15,8 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
 
   const supabase = await getSupabaseServerClient();
+  if (!supabase) return NextResponse.json({ error: "Authentication service is unavailable." }, { status: 503 });
+
   const { data, error } = await supabase
     .from("legacy_os_devices")
     .select("id,workspace_id,name,platform,status,last_seen_at,created_at,updated_at")
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
   }
 
   const supabase = await getSupabaseServerClient();
+  if (!supabase) return NextResponse.json({ error: "Authentication service is unavailable." }, { status: 503 });
+
   const { data, error } = await supabase
     .from("legacy_os_devices")
     .insert({
