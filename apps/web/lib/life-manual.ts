@@ -3,12 +3,11 @@ import type { RecallMemoryRecord } from "./recall";
 import type { SuccessorAction } from "./successor-action-types";
 
 export interface LifeManualPillarSection {
-  key: ContinuityPillarCoverage["key"];
+  key: ContinuityPillarCoverage["pillarKey"];
   title: string;
   score: number;
   status: ContinuityPillarCoverage["status"];
-  gaps: string[];
-  matchedMemoryIds: string[];
+  matchedMemories: number;
 }
 
 export interface LifeManualActionSection {
@@ -27,11 +26,7 @@ export interface LifeManualDocument {
   title: "Life Manual";
   generatedAt: string;
   revision: string;
-  readiness: {
-    score: number;
-    status: string;
-    gaps: number;
-  };
+  readiness: { score: number; status: "needs_attention" | "in_progress" | "ready"; gaps: number };
   first72Hours: string[];
   pillars: LifeManualPillarSection[];
   actions: LifeManualActionSection[];
@@ -40,7 +35,8 @@ export interface LifeManualDocument {
   memories: Array<{
     id: string;
     context: RecallMemoryRecord["context"];
-    text: string;
+    title: string;
+    narrative: string;
     evidenceClass: RecallMemoryRecord["evidenceClass"];
     provenanceComplete: boolean;
   }>;
@@ -72,12 +68,11 @@ export function buildLifeManualDocument(input: {
   const revision = input.revision ?? generatedAt.slice(0, 10);
 
   const pillars = input.pillars.map((pillar) => ({
-    key: pillar.key,
-    title: PILLAR_TITLES[pillar.key],
-    score: pillar.score,
+    key: pillar.pillarKey,
+    title: PILLAR_TITLES[pillar.pillarKey],
+    score: pillar.coverageScore,
     status: pillar.status,
-    gaps: unique(pillar.gaps.map((gap) => gap.label)),
-    matchedMemoryIds: unique(pillar.matchedMemoryIds),
+    matchedMemories: pillar.matchedMemories,
   }));
 
   const actions = input.actions.map((action) => ({
@@ -93,7 +88,7 @@ export function buildLifeManualDocument(input: {
   }));
 
   const openIssues = unique([
-    ...input.continuity.gaps.map((gap) => gap.description),
+    ...input.continuity.gaps.map((gap) => `${gap.title}: ${gap.reason}`),
     ...actions
       .filter((action) => action.state === "blocked" || (action.evidenceRequired && !action.evidenceConfirmed))
       .map((action) => `${action.title}: ${action.evidenceRequired && !action.evidenceConfirmed ? "evidence required" : "blocked"}`),
@@ -103,7 +98,7 @@ export function buildLifeManualDocument(input: {
     input.memories
       .filter((memory) => memory.context === "family" || memory.context === "business")
       .filter((memory) => memory.evidenceClass !== "unknown")
-      .map((memory) => memory.text),
+      .map((memory) => memory.narrative),
   );
 
   const first72Hours = unique([
@@ -111,15 +106,13 @@ export function buildLifeManualDocument(input: {
     ...openIssues.slice(0, 3),
   ]).slice(0, 10);
 
+  const status = input.continuity.readiness >= 80 ? "ready" : input.continuity.readiness >= 40 ? "in_progress" : "needs_attention";
+
   return {
     title: "Life Manual",
     generatedAt,
     revision,
-    readiness: {
-      score: input.continuity.score,
-      status: input.continuity.status,
-      gaps: openIssues.length,
-    },
+    readiness: { score: input.continuity.readiness, status, gaps: openIssues.length },
     first72Hours: first72Hours.length > 0 ? first72Hours : ["Review the seven pillars and confirm the most important unresolved information."],
     pillars,
     actions,
@@ -128,7 +121,8 @@ export function buildLifeManualDocument(input: {
     memories: input.memories.map((memory) => ({
       id: memory.id,
       context: memory.context,
-      text: memory.text,
+      title: memory.title,
+      narrative: memory.narrative,
       evidenceClass: memory.evidenceClass,
       provenanceComplete: memory.provenanceComplete,
     })),
