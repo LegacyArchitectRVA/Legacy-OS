@@ -24,6 +24,7 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
   const byId = new Map(actions.map((action) => [action.id, action]));
   const unresolvedDependencies = actions.flatMap((action) => action.dependencies.filter((id) => byId.get(id)?.state !== "complete").map((dependencyId) => ({ actionId: action.id, dependencyId })));
   const evidenceOutstanding = actions.filter((action) => action.evidenceRequired && !action.evidenceConfirmed && action.state !== "complete");
+  const blockedActions = actions.filter((action) => action.state === "blocked");
   const completedActions = actions.filter((action) => action.state === "complete");
   const actionReadiness = actions.map((action) => {
     const dependencies = action.dependencies.filter((id) => byId.get(id)?.state !== "complete");
@@ -37,10 +38,10 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
     };
   });
   return {
-    ready: unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0,
+    ready: blockedActions.length === 0 && unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0,
     completionPercent: actions.length ? Math.round((completedActions.length / actions.length) * 100) : 0,
     openActions: actions.filter((action) => action.state === "open"),
-    blockedActions: actions.filter((action) => action.state === "blocked"),
+    blockedActions,
     inProgressActions: actions.filter((action) => action.state === "in_progress"),
     completedActions,
     unresolvedDependencies,
