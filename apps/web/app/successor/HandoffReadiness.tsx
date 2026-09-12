@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { HandoffReport } from "./HandoffReport";
 
 interface DependencyDetail { actionId: string; title: string; state: "open" | "in_progress" | "blocked" | "complete" | "missing"; resolved: boolean; }
-interface HandoffActionReadiness { actionId: string; title: string; domain: string; instruction: string; ready: boolean; unresolvedDependencies: string[]; dependencyDetails: DependencyDetail[]; evidenceRequired: boolean; evidenceConfirmed: boolean; reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed"; }
+interface HandoffActionReadiness { actionId: string; title: string; domain: string; instruction: string; ready: boolean; unresolvedDependencies: string[]; dependencyDetails: DependencyDetail[]; evidenceRequired: boolean; evidenceConfirmed: boolean; reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed" | "completion_invalid"; }
 interface HandoffNextAction { actionId: string; reason: "unblocks_downstream_work" | "continue_in_progress"; downstreamCount: number; }
 interface HandoffReadiness { ready: boolean; completionPercent: number; openActions: number; blockedActions: number; inProgressActions: number; completedActions: number; unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>; evidenceOutstanding: Array<{ id: string; title: string; domain: string }>; actionReadiness: HandoffActionReadiness[]; nextAction: HandoffNextAction | null; }
 interface Pillar { pillar_key: string; name: string; coverage_score: number; status: "needs_attention" | "in_progress" | "ready"; matched_memories?: number; }
@@ -17,6 +17,7 @@ const readinessReason = (reason: HandoffActionReadiness["reason"]): string => ({
   dependency_blocked: "Waiting on another action",
   evidence_required: "Evidence required",
   completed: "Completed",
+  completion_invalid: "Completion needs correction",
 }[reason]);
 
 const dependencyState = (state: DependencyDetail["state"]) => ({
@@ -57,7 +58,8 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
   const dependencyIssues = data.unresolvedDependencies.map((issue) => ({ key: `dependency:${issue.actionId}:${issue.dependencyId}`, actionId: issue.actionId, label: `Waiting on ${actionTitle(issue.dependencyId)}` }));
   const evidenceIssues = data.evidenceOutstanding.map((action) => ({ key: `evidence:${action.id}`, actionId: action.id, label: `Evidence needed: ${action.title}` }));
   const blockedIssues = data.actionReadiness.filter((action) => action.reason === "explicitly_blocked").map((action) => ({ key: `blocked:${action.actionId}`, actionId: action.actionId, label: `Explicitly blocked: ${action.title}` }));
-  const issues = [...blockedIssues, ...dependencyIssues, ...evidenceIssues];
+  const invalidCompletionIssues = data.actionReadiness.filter((action) => action.reason === "completion_invalid").map((action) => ({ key: `completion-invalid:${action.actionId}`, actionId: action.actionId, label: `Completion needs correction: ${action.title}` }));
+  const issues = [...blockedIssues, ...invalidCompletionIssues, ...dependencyIssues, ...evidenceIssues];
   const nextAction = data.nextAction ? actionById.get(data.nextAction.actionId) ?? null : null;
   const riskLabel = intelligence?.overallRisk === "critical" ? "Critical continuity risk" : intelligence?.overallRisk === "elevated" ? "Elevated continuity risk" : intelligence?.overallRisk === "watch" ? "Continuity watch" : "Low continuity risk";
 
