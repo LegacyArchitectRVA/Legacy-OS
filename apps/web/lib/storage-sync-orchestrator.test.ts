@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { runStorageSync } from "./storage-sync-orchestrator.ts";
+import type { StorageSyncOrchestratorDependencies } from "./storage-sync-orchestrator.ts";
 import type { StorageConnector } from "./storage-connectors.ts";
 
 type Row = Record<string, unknown>;
@@ -75,10 +76,14 @@ const connector: StorageConnector = {
   },
 };
 
+function deps(fake: ReturnType<typeof createFakeSupabase>, getConnector: StorageSyncOrchestratorDependencies["getConnector"]): StorageSyncOrchestratorDependencies {
+  return { supabase: fake.client as unknown as StorageSyncOrchestratorDependencies["supabase"], getConnector };
+}
+
 const fake = createFakeSupabase(source, device);
 const result = await runStorageSync(
   { id: "run-1", workspace_id: "workspace-1", storage_source_id: "source-1" },
-  { supabase: fake.client, getConnector: () => connector },
+  deps(fake, () => connector),
 );
 
 assert.equal(result.batches, 2);
@@ -93,12 +98,12 @@ const failingFake = createFakeSupabase(source, device);
 await assert.rejects(
   runStorageSync(
     { id: "run-1", workspace_id: "workspace-1", storage_source_id: "source-1" },
-    { supabase: failingFake.client, getConnector: () => ({
+    deps(failingFake, () => ({
       sourceType: "local_filesystem",
       async enumerate() {
         throw new Error("connector failure");
       },
-    }) },
+    })),
   ),
   /connector failure/,
 );
@@ -111,7 +116,7 @@ const revokedFake = createFakeSupabase({ ...source, status: "revoked" }, device)
 await assert.rejects(
   runStorageSync(
     { id: "run-1", workspace_id: "workspace-1", storage_source_id: "source-1" },
-    { supabase: revokedFake.client, getConnector: () => connector },
+    deps(revokedFake, () => connector),
   ),
   /no longer active/,
 );
