@@ -9,10 +9,11 @@ const actions = [
   { id: "d", state: "open", evidenceRequired: false, dependencies: ["c"] },
   { id: "e", state: "in_progress", evidenceRequired: true, evidenceConfirmed: true, dependencies: [] },
   { id: "f", state: "complete", evidenceRequired: true, evidenceConfirmed: false, dependencies: [] },
+  { id: "g", state: "blocked", evidenceRequired: false, dependencies: [] },
 ];
 
 const graph = buildSuccessorDependencyGraph(actions.map(({ id, dependencies, state, evidenceRequired, evidenceConfirmed }) => ({ id, dependencyIds: dependencies, status: state, evidenceRequired, evidenceConfirmed })));
-assert.deepEqual(graph.blockedActionIds.sort(), ["c", "d", "f"]);
+assert.deepEqual(graph.blockedActionIds.sort(), ["c", "d", "f", "g"]);
 assert.deepEqual(graph.readyActionIds, ["b", "e"]);
 
 assert.throws(() => buildSuccessorDependencyGraph([
@@ -32,9 +33,9 @@ assert.throws(() => buildSuccessorDependencyGraph([
 
 const summary = summarizeSuccessorActions(actions);
 assert.deepEqual(summary, {
-  total: 6,
+  total: 7,
   ready: 1,
-  blocked: 3,
+  blocked: 4,
   inProgress: 1,
   complete: 1,
   evidenceRequired: 3,
