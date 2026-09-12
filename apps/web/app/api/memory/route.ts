@@ -1,7 +1,29 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../lib/supabase/server";
+import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody } from "../../../lib/api-request";
+
+const MAX_BODY_BYTES = 32 * 1024;
+const MAX_TEXT_CHARS = 8_000;
+
 export async function POST(request: Request) {
-  if (!await getAuthenticatedUser()) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
-  const memory = await request.json();
-  return NextResponse.json({ stored: true, memory });
+  if (!await getAuthenticatedUser()) {
+    return NextResponse.json({ error: "Authentication is required." }, { status: 401, headers: jsonResponseHeaders() });
+  }
+
+  try {
+    const body = await parseJsonBody<unknown>(request, MAX_BODY_BYTES);
+    if (!isRecord(body)) throw new ApiRequestError("Request body must be a JSON object.");
+    const title = optionalString(body.title, "title", 160);
+    const narrative = optionalString(body.narrative, "narrative", MAX_TEXT_CHARS);
+    if (!title && !narrative) throw new ApiRequestError("title or narrative is required.");
+    return NextResponse.json(
+      { stored: false, status: "accepted", memory: { title: title ?? null, narrative: narrative ?? null } },
+      { headers: jsonResponseHeaders() },
+    );
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      return NextResponse.json({ error: error.message }, { status: error.status, headers: jsonResponseHeaders() });
+    }
+    return NextResponse.json({ error: "Unable to accept memory." }, { status: 500, headers: jsonResponseHeaders() });
+  }
 }
