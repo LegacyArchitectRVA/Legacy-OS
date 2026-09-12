@@ -5,7 +5,13 @@ export default function Dashboard() {
   const modules = ["Business Brain", "Continuity Vault", "Executive Advisor", "Production Assistant", "Legacy Score"];
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold">LegacyOS Dashboard</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Legacy OS</p>
+          <h1 className="text-3xl font-bold">LegacyOS Dashboard</h1>
+        </div>
+        <Link href="/os" className="rounded-md border px-4 py-2 text-sm font-semibold transition hover:bg-muted">Open Command Center</Link>
+      </div>
       <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => <div key={module} className="rounded border p-6">{module}</div>)}
         <Link href="/dashboard/recall" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Legacy Recall</div><p className="mt-2 text-sm text-muted-foreground">Find memories, evidence, and provenance behind your continuity record.</p></Link>
