@@ -74,6 +74,7 @@ select throws_ok(
   'clip owner cannot insert a clip for another user'
 );
 
+select set_config('request.jwt.claim.sub', '', true);
 set local role anon;
 select is(
   (select count(*)::integer from public.legacy_os_clips),
