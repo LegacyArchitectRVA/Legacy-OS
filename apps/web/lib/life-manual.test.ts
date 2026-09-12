@@ -86,7 +86,7 @@ assert.equal(document.actions[0]?.evidenceConfirmed, false);
 assert.ok(document.openIssues.some((issue) => issue.includes("Digital continuity")));
 assert.ok(document.openIssues.some((issue) => issue.includes("evidence required")));
 assert.ok(document.openIssues.some((issue) => issue.includes("completed status needs correction")));
-assert.ok(document.openIssues.some((issue) => issue.includes("waiting on Prepare vendor handoff")));
+assert.ok(document.openIssues.some((issue) => issue.includes("Prepare vendor handoff: waiting on Confirm vendor contact")));
 assert.equal(document.importantDecisions[0], "Keep the primary vendor relationship active.");
 assert.equal(document.memories[0]?.provenanceComplete, true);
 assert.equal(document.handoff.ready, false);
