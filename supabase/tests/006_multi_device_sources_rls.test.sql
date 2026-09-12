@@ -48,6 +48,8 @@ select lives_ok($$update public.legacy_os_devices set name='Renamed by workspace
 select lives_ok($$update public.legacy_os_storage_sources set name='Renamed by workspace owner' where id='00000000-0000-0000-0000-000000000301'$$, 'another workspace member can manage an existing source');
 select throws_ok($$update public.legacy_os_devices set registered_by='00000000-0000-0000-0000-000000000021' where id='00000000-0000-0000-0000-000000000201'$$, 'P0001', null, 'device creator identity cannot be changed');
 select throws_ok($$update public.legacy_os_storage_sources set created_by='00000000-0000-0000-0000-000000000021' where id='00000000-0000-0000-0000-000000000301'$$, 'P0001', null, 'storage source creator identity cannot be changed');
+select throws_ok($$update public.legacy_os_files set workspace_id='00000000-0000-0000-0000-000000000999' where id='00000000-0000-0000-0000-000000000401'$$, 'P0001', null, 'indexed file workspace cannot be changed');
+select throws_ok($$update public.legacy_os_files set storage_source_id='00000000-0000-0000-0000-000000000999' where id='00000000-0000-0000-0000-000000000401'$$, 'P0001', null, 'indexed file source cannot be changed');
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', false);
 select throws_ok($$insert into public.legacy_os_devices (workspace_id,registered_by,name,platform,device_key_fingerprint) values ('00000000-0000-0000-0000-000000000121','00000000-0000-0000-0000-000000000021','Forged Device','windows','fp-forged-device')$$, '42501', null, 'workspace member cannot spoof another user as device creator');
