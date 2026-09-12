@@ -8,6 +8,9 @@ values
   ('00000000-0000-0000-0000-000000000031', 'authenticated', 'authenticated', 'manifest-owner@test.local', '{}', '{}'),
   ('00000000-0000-0000-0000-000000000032', 'authenticated', 'authenticated', 'manifest-outsider@test.local', '{}', '{}');
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000031', false);
+
 insert into public.workspaces (id, name, owner_id)
 values ('00000000-0000-0000-0000-000000000131', 'Manifest Test Workspace', '00000000-0000-0000-0000-000000000031');
 
@@ -16,9 +19,6 @@ values ('00000000-0000-0000-0000-000000000331', '00000000-0000-0000-0000-0000000
 
 insert into public.legacy_os_sync_runs (id, workspace_id, storage_source_id, status)
 values ('00000000-0000-0000-0000-000000000531', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000331', 'queued');
-
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000031', false);
 
 select lives_ok($$select * from public.ingest_legacy_os_manifest(
   '00000000-0000-0000-0000-000000000531',
