@@ -22,6 +22,11 @@ export default function LifeManualPage() {
   if (!document) return <main className="mx-auto max-w-5xl p-8"><p>Loading Life Manual…</p></main>;
 
   const handoffStatus = document.handoff.ready ? "Successor-ready" : "Needs attention";
+  const nextActionLabel = document.handoff.nextAction?.reason === "resolve_evidence_gap"
+    ? "Resolve the evidence gap before proceeding."
+    : document.handoff.nextAction?.reason === "unblocks_downstream_work"
+      ? "This action unblocks downstream work."
+      : "Continue this in-progress action.";
 
   return (
     <main className="mx-auto max-w-5xl space-y-10 p-8 print:max-w-none print:p-0">
@@ -47,7 +52,7 @@ export default function LifeManualPage() {
         </div>
         {document.handoff.nextAction && (
           <p className="mt-5 border-t pt-4 text-sm">
-            Next priority: <strong>{document.actions.find((action) => action.id === document.handoff.nextAction?.actionId)?.title ?? document.handoff.nextAction.actionId}</strong>. {document.handoff.nextAction.reason === "unblocks_downstream_work" ? "This action unblocks downstream work." : "Continue this in-progress action."}
+            Next priority: <strong>{document.actions.find((action) => action.id === document.handoff.nextAction?.actionId)?.title ?? document.handoff.nextAction.actionId}</strong>. {nextActionLabel}
           </p>
         )}
       </section>
