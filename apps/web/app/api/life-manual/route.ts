@@ -40,9 +40,14 @@ function toCoverage(
   });
 }
 
+const PRIVATE_HEADERS = {
+  "Cache-Control": "private, no-store",
+  "X-Content-Type-Options": "nosniff",
+};
+
 export async function GET() {
   const user = await getAuthenticatedUser();
-  if (!user) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Authentication is required." }, { status: 401, headers: PRIVATE_HEADERS });
 
   try {
     const [continuity, actions, memories] = await Promise.all([
@@ -52,7 +57,7 @@ export async function GET() {
     ]);
 
     if (!continuity.snapshot) {
-      return NextResponse.json({ error: "A continuity workspace is required." }, { status: 409 });
+      return NextResponse.json({ error: "A continuity workspace is required." }, { status: 409, headers: PRIVATE_HEADERS });
     }
 
     const document = buildLifeManualDocument({
@@ -62,13 +67,11 @@ export async function GET() {
       memories,
     });
 
-    return NextResponse.json(document, {
-      headers: { "Cache-Control": "private, no-store" },
-    });
-  } catch (error) {
+    return NextResponse.json(document, { headers: PRIVATE_HEADERS });
+  } catch {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to generate Life Manual." },
-      { status: 500 },
+      { error: "Unable to generate Life Manual." },
+      { status: 500, headers: PRIVATE_HEADERS },
     );
   }
 }
