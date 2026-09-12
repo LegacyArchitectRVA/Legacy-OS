@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { runStorageSync } from "./storage-sync-orchestrator.ts";
 import type { StorageSyncOrchestratorDependencies } from "./storage-sync-orchestrator.ts";
-import type { StorageConnector } from "./storage-connectors.ts";
+import type { ManifestBatch, StorageConnector } from "./storage-connectors.ts";
 
 type Row = Record<string, unknown>;
 
@@ -16,7 +16,10 @@ function createFakeSupabase(source: Row, device: Row | null) {
     from(table: string) {
       const filters: Record<string, string> = {};
       const query = {
-        select(_columns: string) { return query; },
+        select(columns: string) {
+          void columns;
+          return query;
+        },
         eq(column: string, value: string) { filters[column] = value; return query; },
         async maybeSingle() {
           if (table === "legacy_os_storage_sources") return { data: filters.id === source.id ? source : null, error: null };
@@ -59,7 +62,7 @@ const device = { id: "device-1", status: "active" as const };
 let enumerationCount = 0;
 const connector: StorageConnector = {
   sourceType: "local_filesystem",
-  async enumerate(_context, cursor) {
+  async enumerate(_context, cursor): Promise<ManifestBatch> {
     enumerationCount += 1;
     if (!cursor) {
       return {
@@ -118,7 +121,7 @@ await assert.rejects(
     { id: "run-1", workspace_id: "workspace-1", storage_source_id: "source-1" },
     deps(failingFake, () => ({
       sourceType: "local_filesystem",
-      async enumerate() {
+      async enumerate(): Promise<ManifestBatch> {
         throw new Error("connector failure");
       },
     })),
