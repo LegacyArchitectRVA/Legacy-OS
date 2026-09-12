@@ -7,7 +7,6 @@ const MAX_TEXT_LENGTH = 8192;
 const MAX_METADATA_BYTES = 16 * 1024;
 const SHA256 = /^[a-f0-9]{64}$/i;
 const SYNC_SELECT = "id,workspace_id,storage_source_id,status,started_at,completed_at,discovered_count,indexed_count,failed_count,error_code,created_at";
-
 type RouteContext = { params: Promise<{ id: string }> };
 
 type ManifestFile = {
@@ -136,52 +135,18 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!syncRun) return response({ error: "Synchronization run not found." }, 404);
   if (!["queued", "running"].includes(syncRun.status)) return response({ error: "Synchronization run is no longer writable." }, 409);
 
-  const { error: runningError } = await supabase
-    .from("legacy_os_sync_runs")
-    .update({ status: "running", started_at: syncRun.started_at ?? new Date().toISOString() })
-    .eq("id", syncRunId)
-    .eq("status", "queued");
-  if (runningError) return response({ error: "Unable to start synchronization." }, 500);
-
-  if (normalizedFiles.length > 0) {
-    const rows = normalizedFiles.map((file) => ({
-      workspace_id: source.workspace_id,
-      storage_source_id: sourceId,
-      external_id: file.external_id,
-      path: file.path,
-      name: file.name,
-      mime_type: file.mime_type,
-      size_bytes: file.size_bytes,
-      content_hash: file.content_hash,
-      modified_at: file.modified_at,
-      metadata: file.metadata,
-      indexed_at: new Date().toISOString(),
-    }));
-    const { error: upsertError } = await supabase
-      .from("legacy_os_files")
-      .upsert(rows, { onConflict: "storage_source_id,external_id" });
-    if (upsertError) {
-      await supabase.from("legacy_os_sync_runs").update({ status: "failed", completed_at: new Date().toISOString(), error_code: "FILE_INDEX_FAILED" }).eq("id", syncRunId);
-      return response({ error: "Unable to index the manifest batch." }, upsertError.code === "42501" ? 403 : 500);
-    }
-  }
-
-  const { data: advancedRuns, error: advanceError } = await supabase.rpc("advance_legacy_os_sync_run", {
+  const { data: advancedRuns, error: ingestError } = await supabase.rpc("ingest_legacy_os_manifest", {
     p_sync_run_id: syncRunId,
-    p_file_count: normalizedFiles.length,
+    p_source_id: sourceId,
+    p_files: normalizedFiles,
     p_complete: complete,
   });
-  if (advanceError) return response({ error: "Unable to update synchronization progress." }, 500);
-  const updatedRun = Array.isArray(advancedRuns) ? advancedRuns[0] : advancedRuns;
-  if (!updatedRun) return response({ error: "Synchronization run is no longer writable." }, 409);
-
-  if (complete) {
-    const { error: sourceUpdateError } = await supabase
-      .from("legacy_os_storage_sources")
-      .update({ last_sync_at: new Date().toISOString() })
-      .eq("id", sourceId);
-    if (sourceUpdateError) return response({ error: "Synchronization completed but source status could not be updated." }, 500);
+  if (ingestError) {
+    const status = ingestError.code === "42501" ? 403 : ingestError.code === "P0001" ? 409 : 500;
+    return response({ error: status === 500 ? "Unable to ingest the manifest batch." : "Synchronization run is no longer writable." }, status);
   }
 
+  const updatedRun = Array.isArray(advancedRuns) ? advancedRuns[0] : advancedRuns;
+  if (!updatedRun) return response({ error: "Synchronization run is no longer writable." }, 409);
   return response({ syncRun: updatedRun, indexed: normalizedFiles.length });
 }
