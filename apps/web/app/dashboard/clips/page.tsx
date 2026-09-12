@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+export const dynamic = "force-dynamic";
+
 type ClipKind = "audio" | "video";
 type PillarKey =
   | "digital_life"
@@ -123,10 +125,11 @@ export default function ClipsPage() {
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadClips();
-    }, 0);
-    return () => window.clearTimeout(timer);
+    // Loading from Supabase is an intentional client-side synchronization effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadClips();
+    // loadClips is intentionally stable for the lifetime of this page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateClip = async (clip: Clip, values: Partial<Clip>) => {
