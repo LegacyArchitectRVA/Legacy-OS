@@ -24,14 +24,15 @@ type SyncRunRecord = {
 };
 
 type QueryResult<T> = { data: T | null; error: { code?: string; message?: string } | null };
+type SupabaseQuery = {
+  select(columns: string): SupabaseQuery;
+  eq(column: string, value: string): SupabaseQuery;
+  maybeSingle(): Promise<QueryResult<unknown>>;
+  update(values: Record<string, unknown>): SupabaseQuery;
+};
 
 type SupabaseLike = {
-  from(table: string): {
-    select(columns: string): SupabaseLike;
-    eq(column: string, value: string): SupabaseLike;
-    maybeSingle(): Promise<QueryResult<unknown>>;
-    update(values: Record<string, unknown>): SupabaseLike;
-  };
+  from(table: string): SupabaseQuery;
   rpc(name: string, args: Record<string, unknown>): Promise<QueryResult<SyncRunRecord>>;
 };
 
