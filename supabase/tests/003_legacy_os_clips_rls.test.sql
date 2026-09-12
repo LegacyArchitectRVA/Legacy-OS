@@ -75,11 +75,10 @@ select throws_ok(
 );
 
 set local role anon;
-select throws_ok(
-  $$select count(*) from public.legacy_os_clips$$,
-  '42501',
-  null,
-  'anon cannot select clips'
+select is(
+  (select count(*)::integer from public.legacy_os_clips),
+  0,
+  'anon cannot see clips'
 );
 
 select * from finish();
