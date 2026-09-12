@@ -7,6 +7,9 @@ import { buildLegacyOsVoiceInstruction, getLegacyOsVoiceMode } from "../../../li
 
 const MAX_MEMORIES = 40;
 const MAX_MEMORY_CHARS = 1200;
+const MAX_MESSAGE_CHARS = 12_000;
+const MAX_WORKSPACE_CHARS = 120;
+const MAX_REQUEST_BYTES = 64 * 1024;
 
 function buildContext(memories: Awaited<ReturnType<typeof listRecallMemories>>, continuity: Awaited<ReturnType<typeof getContinuityEngineState>>) {
   const memoryContext = memories.slice(0, MAX_MEMORIES).map((memory) => ({
@@ -32,14 +35,39 @@ function buildContext(memories: Awaited<ReturnType<typeof listRecallMemories>>, 
   });
 }
 
+function requestExceedsLimit(request: Request) {
+  const contentLength = request.headers.get("content-length");
+  if (!contentLength) return false;
+  const parsed = Number(contentLength);
+  return Number.isFinite(parsed) && parsed > MAX_REQUEST_BYTES;
+}
+
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
   if (!user) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
 
-  const body = await request.json();
-  const message = typeof body?.message === "string" ? body.message.trim() : "";
-  const workspace = typeof body?.workspace === "string" ? body.workspace : null;
+  if (requestExceedsLimit(request)) {
+    return NextResponse.json({ error: "Request body is too large." }, { status: 413 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  }
+
+  const message = typeof (body as { message?: unknown })?.message === "string"
+    ? (body as { message: string }).message.trim()
+    : "";
+  const workspace = typeof (body as { workspace?: unknown })?.workspace === "string"
+    ? (body as { workspace: string }).workspace.trim().slice(0, MAX_WORKSPACE_CHARS)
+    : null;
+
   if (!message) return NextResponse.json({ error: "A message is required." }, { status: 400 });
+  if (message.length > MAX_MESSAGE_CHARS) {
+    return NextResponse.json({ error: `Message must be ${MAX_MESSAGE_CHARS.toLocaleString()} characters or fewer.` }, { status: 413 });
+  }
 
   const voiceMode = getLegacyOsVoiceMode(user.user_metadata as Record<string, unknown> | undefined);
   const clientName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null;
