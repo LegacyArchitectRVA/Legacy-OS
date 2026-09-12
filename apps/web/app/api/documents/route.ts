@@ -1,9 +1,29 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../lib/supabase/server";
+import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody, requiredString } from "../../../lib/api-request";
+
+const MAX_BODY_BYTES = 256 * 1024;
+const MAX_CONTENT_CHARS = 200_000;
 
 export async function POST(request: Request) {
-  const user = await getAuthenticatedUser();
-  if (!user) return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
-  const { name, type, content } = await request.json();
-  return NextResponse.json({ document: { name, type, status: "queued", extracted: Boolean(content) } });
+  if (!await getAuthenticatedUser()) {
+    return NextResponse.json({ error: "Authentication is required." }, { status: 401, headers: jsonResponseHeaders() });
+  }
+
+  try {
+    const body = await parseJsonBody<unknown>(request, MAX_BODY_BYTES);
+    if (!isRecord(body)) throw new ApiRequestError("Request body must be a JSON object.");
+    const name = requiredString(body.name, "name", 160);
+    const type = optionalString(body.type, "type", 80) ?? "unknown";
+    const content = optionalString(body.content, "content", MAX_CONTENT_CHARS);
+    return NextResponse.json(
+      { document: { name, type, status: "queued", extracted: Boolean(content) } },
+      { headers: jsonResponseHeaders() },
+    );
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      return NextResponse.json({ error: error.message }, { status: error.status, headers: jsonResponseHeaders() });
+    }
+    return NextResponse.json({ error: "Unable to queue document." }, { status: 500, headers: jsonResponseHeaders() });
+  }
 }
