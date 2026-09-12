@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../lib/supabase/server";
-import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody, requiredString } from "../../../lib/api-request";
+import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody, requiredString } from "../../lib/api-request";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_CONTENT_CHARS = 200_000;
