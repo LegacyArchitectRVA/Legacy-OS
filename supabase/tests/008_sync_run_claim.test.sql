@@ -26,10 +26,10 @@ values
   ('00000000-0000-0000-0000-000000000431', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000331', 'queued'),
   ('00000000-0000-0000-0000-000000000432', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000332', 'queued');
 
-select has_function_privilege('authenticated', 'public.claim_legacy_os_sync_run(uuid)', 'execute') is true,
-  'authenticated users can claim synchronization runs';
-select has_function_privilege('anon', 'public.claim_legacy_os_sync_run(uuid)', 'execute') is false,
-  'anonymous users cannot claim synchronization runs';
+select ok(has_function_privilege('authenticated', 'public.claim_legacy_os_sync_run(uuid)', 'execute'),
+  'authenticated users can claim synchronization runs');
+select ok(not has_function_privilege('anon', 'public.claim_legacy_os_sync_run(uuid)', 'execute'),
+  'anonymous users cannot claim synchronization runs');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000032', false);
