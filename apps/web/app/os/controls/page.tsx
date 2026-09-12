@@ -6,7 +6,6 @@ import LegacyOsControls from "../controls";
 
 type Device = { id: string; name: string; platform: string; status: string };
 type Source = { id: string; name: string; source_type: string; provider: string | null; status: string };
-
 type State = { workspaceId: string | null };
 
 export default function LegacyOsControlsPage() {
@@ -17,7 +16,7 @@ export default function LegacyOsControlsPage() {
   const [error, setError] = useState("");
 
   async function load() {
-    setLoading(true); setError("");
+    setError("");
     try {
       const responses = await Promise.all([
         fetch("/api/continuity", { cache: "no-store" }),
@@ -32,8 +31,11 @@ export default function LegacyOsControlsPage() {
       setState({ workspaceId: typeof bodies[0].workspaceId === "string" ? bodies[0].workspaceId : null });
       setDevices(Array.isArray(bodies[1].devices) ? bodies[1].devices : []);
       setSources(Array.isArray(bodies[2].sources) ? bodies[2].sources : []);
-    } catch (value) { setError(value instanceof Error ? value.message : "Unable to load controls."); }
-    finally { setLoading(false); }
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "Unable to load controls.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { void load(); }, []);
