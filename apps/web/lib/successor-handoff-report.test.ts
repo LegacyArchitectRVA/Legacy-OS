@@ -30,6 +30,22 @@ const evidenceReport = buildSuccessorHandoffReport(buildSuccessorHandoff(evidenc
 assert.equal(evidenceReport.blockers[0]?.reason, "evidence");
 assert.equal(evidenceReport.nextActions.length, 0);
 
+const invalidCompletionEvidence = [action({ id: "a", state: "complete", evidenceRequired: true, evidenceConfirmed: false })];
+const invalidEvidenceReport = buildSuccessorHandoffReport(buildSuccessorHandoff(invalidCompletionEvidence), invalidCompletionEvidence);
+assert.equal(invalidEvidenceReport.blockers[0]?.reason, "completion_invalid");
+assert.equal(invalidEvidenceReport.blockers[0]?.dependencies.length, 0);
+assert.equal(invalidEvidenceReport.completionPercent, 0);
+assert.equal(invalidEvidenceReport.nextActions.length, 0);
+
+const invalidCompletionDependency = [
+  action(),
+  action({ id: "b", title: "Downstream task", state: "complete", dependencies: ["a"] }),
+];
+const invalidDependencyReport = buildSuccessorHandoffReport(buildSuccessorHandoff(invalidCompletionDependency), invalidCompletionDependency);
+assert.equal(invalidDependencyReport.blockers[0]?.reason, "completion_invalid");
+assert.deepEqual(invalidDependencyReport.blockers[0]?.dependencies.map((item) => item.id), ["a"]);
+assert.equal(invalidDependencyReport.completionPercent, 0);
+
 const executableInProgress = [action({ id: "a", state: "in_progress" })];
 const inProgressReport = buildSuccessorHandoffReport(buildSuccessorHandoff(executableInProgress), executableInProgress);
 assert.deepEqual(inProgressReport.nextActions.map((item) => item.id), ["a"]);
