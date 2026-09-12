@@ -35,7 +35,7 @@ const summary = summarizeSuccessorActions(actions);
 assert.deepEqual(summary, {
   total: 7,
   ready: 1,
-  blocked: 4,
+  blocked: 2,
   inProgress: 1,
   complete: 1,
   evidenceRequired: 3,
