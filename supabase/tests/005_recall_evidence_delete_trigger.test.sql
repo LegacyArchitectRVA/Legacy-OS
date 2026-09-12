@@ -17,7 +17,7 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000031
 insert into public.legacy_recall_evidence
   (id, memory_id, user_id, type, label, uri, verification_status)
 values
-  ('42000000-0000-0000-0000-000000000001', '41000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000031', 'document', 'Verified evidence', 'memory://verified', 'verified');
+  ('42000000-0000-0000-0000-000000000001', '41000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000031', 'document', 'Verified evidence', 'memory://verified', 'verified');
 
 select is(
   (select provenance_complete from public.legacy_recall_memories where id='41000000-0000-0000-0000-000000000001'),
