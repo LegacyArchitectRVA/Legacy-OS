@@ -14,6 +14,21 @@ const graph = buildSuccessorDependencyGraph(actions.map(({ id, dependencies, sta
 assert.deepEqual(graph.blockedActionIds.sort(), ["c", "d"]);
 assert.deepEqual(graph.readyActionIds, ["b", "e"]);
 
+assert.throws(() => buildSuccessorDependencyGraph([
+  { id: "a", dependencyIds: ["b"], status: "open" },
+  { id: "b", dependencyIds: ["a"], status: "open" },
+]), /Circular successor action dependency/);
+assert.throws(() => buildSuccessorDependencyGraph([
+  { id: "a", dependencyIds: ["missing"], status: "open" },
+]), /Unknown successor action dependency/);
+assert.throws(() => buildSuccessorDependencyGraph([
+  { id: "a", dependencyIds: ["a"], status: "open" },
+]), /cannot depend on itself/);
+assert.throws(() => buildSuccessorDependencyGraph([
+  { id: "a", dependencyIds: ["b", "b"], status: "open" },
+  { id: "b", dependencyIds: [], status: "complete" },
+]), /Duplicate successor action dependency/);
+
 const summary = summarizeSuccessorActions(actions);
 assert.deepEqual(summary, {
   total: 5,
