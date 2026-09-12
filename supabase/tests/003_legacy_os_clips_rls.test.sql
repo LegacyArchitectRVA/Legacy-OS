@@ -46,6 +46,17 @@ select ok(
   'clip successor link has a foreign key'
 );
 
+select ok(
+  exists (
+    select 1
+    from pg_trigger
+    where tgrelid = 'public.legacy_successor_actions'::regclass
+      and tgname = 'prevent_successor_action_owner_change'
+      and not tgisinternal
+  ),
+  'successor action ownership immutability trigger exists'
+);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', true);
 
@@ -72,6 +83,13 @@ select throws_ok(
   '42501',
   null,
   'clip owner cannot insert a clip for another user'
+);
+
+select throws_ok(
+  $$update public.legacy_successor_actions set user_id = '00000000-0000-0000-0000-000000000022' where id = '11000000-0000-0000-0000-000000000021'$$,
+  'P0001',
+  null,
+  'successor action owner cannot be changed after creation'
 );
 
 select set_config('request.jwt.claim.sub', '', true);
