@@ -31,9 +31,6 @@ revoke execute on function private.is_legacy_os_master() from public;
 grant usage on schema private to authenticated;
 grant execute on function private.is_legacy_os_master() to authenticated;
 
--- Bind the configured master identity to its immutable auth.users UUID.
--- This function cannot be used by another account because the bootstrap email
--- is fixed in the database and the inserted user_id always comes from auth.uid().
 create or replace function public.bootstrap_legacy_os_master_account()
 returns boolean
 language plpgsql
@@ -79,9 +76,6 @@ $$;
 revoke execute on function public.bootstrap_legacy_os_master_account() from public, anon;
 grant execute on function public.bootstrap_legacy_os_master_account() to authenticated;
 
--- Extend the canonical workspace access predicate. Every workspace-scoped
--- table using this helper now recognizes the Master Account without weakening
--- ordinary member isolation.
 create or replace function private.user_can_access_workspace(target_workspace_id uuid)
 returns boolean
 language sql
@@ -107,7 +101,6 @@ $$;
 revoke execute on function private.user_can_access_workspace(uuid) from public;
 grant execute on function private.user_can_access_workspace(uuid) to authenticated;
 
--- Master may administer workspace membership without changing the owner model.
 drop policy if exists "authenticated users can read workspace membership" on public.workspace_members;
 drop policy if exists "workspace owners can manage membership" on public.workspace_members;
 drop policy if exists "workspace owners can update membership" on public.workspace_members;
@@ -166,8 +159,6 @@ using (
   )
 );
 
--- Master can administer workspace records themselves, while ordinary owners
--- retain the existing owner-only write boundary.
 drop policy if exists "workspace owners can update their workspace" on public.workspaces;
 drop policy if exists "workspace owners can delete their workspace" on public.workspaces;
 
@@ -189,5 +180,26 @@ using (
   or (select auth.uid()) = owner_id
 );
 
--- Master identity is intentionally not exposed through a table policy.
--- Read/write access must occur through controlled server-side functions.
+-- Master administration cannot silently transfer ownership through normal CRUD.
+create or replace function private.prevent_master_workspace_owner_change()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.owner_id is distinct from new.owner_id then
+    raise exception 'Workspace ownership transfer requires the dedicated ownership workflow';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function private.prevent_master_workspace_owner_change() from public;
+grant execute on function private.prevent_master_workspace_owner_change() to authenticated;
+
+drop trigger if exists prevent_master_workspace_owner_change on public.workspaces;
+create trigger prevent_master_workspace_owner_change
+before update on public.workspaces
+for each row
+when (old.owner_id is distinct from new.owner_id)
+execute function private.prevent_master_workspace_owner_change();
