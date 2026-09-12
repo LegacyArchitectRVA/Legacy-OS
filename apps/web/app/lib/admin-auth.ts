@@ -1,5 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 
+function decodeCookieValue(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return "";
+  }
+}
+
 function parseCookies(request: Request) {
   const header = request.headers.get("cookie") ?? "";
   return header
@@ -10,7 +18,7 @@ function parseCookies(request: Request) {
       const separator = part.indexOf("=");
       return separator === -1
         ? { name: part, value: "" }
-        : { name: part.slice(0, separator), value: decodeURIComponent(part.slice(separator + 1)) };
+        : { name: part.slice(0, separator), value: decodeCookieValue(part.slice(separator + 1)) };
     });
 }
 
@@ -33,7 +41,6 @@ export async function isAdminRequest(request: Request) {
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
-
   return admins.includes(data.user.email.toLowerCase());
 }
 
