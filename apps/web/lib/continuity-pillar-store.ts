@@ -13,7 +13,16 @@ export const CONTINUITY_PILLARS = [
   ["legacy_wishes", "Legacy & Wishes"],
 ] as const;
 
-async function getOwnedWorkspace(supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>, userId: string) {
+type ContinuityPillarKey = (typeof CONTINUITY_PILLARS)[number][0];
+
+function isContinuityPillarKey(value: string): value is ContinuityPillarKey {
+  return CONTINUITY_PILLARS.some(([key]) => key === value);
+}
+
+async function getOwnedWorkspace(
+  supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
+  userId: string,
+) {
   const { data, error } = await supabase
     .from("workspaces")
     .select("id")
@@ -21,7 +30,7 @@ async function getOwnedWorkspace(supabase: NonNullable<Awaited<ReturnType<typeof
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (error) throw new Error(`Workspace lookup failed: ${error.message}`);
+  if (error) throw new Error("Unable to resolve the current workspace.");
   return data;
 }
 
@@ -39,14 +48,14 @@ export async function getContinuityEngineState() {
     supabase.from("continuity_readiness").select("workspace_id,overall_score,pillar_count,ready_count,in_progress_count,needs_attention_count,last_updated").eq("workspace_id", workspace.id).maybeSingle(),
     listRecallMemories(undefined, userId),
   ]);
-  if (pillarError) throw new Error(`Continuity pillar retrieval failed: ${pillarError.message}`);
-  if (readinessError) throw new Error(`Continuity readiness retrieval failed: ${readinessError.message}`);
+  if (pillarError) throw new Error("Unable to retrieve continuity pillars.");
+  if (readinessError) throw new Error("Unable to retrieve continuity readiness.");
 
   const snapshot = buildContinuitySnapshot(memories);
   const computedPillars = buildContinuityPillarCoverage(memories);
   const computedByKey = new Map(computedPillars.map((pillar) => [pillar.pillarKey, pillar]));
   const mergedPillars = (pillars ?? []).map((pillar) => {
-    const computed = computedByKey.get(pillar.pillar_key as (typeof CONTINUITY_PILLARS)[number][0]);
+    const computed = computedByKey.get(pillar.pillar_key as ContinuityPillarKey);
     return computed ? { ...pillar, coverage_score: computed.coverageScore, status: computed.status, matched_memories: computed.matchedMemories } : pillar;
   });
   const actions = buildContinuityActions(snapshot.gaps);
@@ -79,7 +88,7 @@ export async function refreshContinuityPillars() {
       .update({ coverage_score: pillar.coverageScore, status: pillar.status, updated_at: now })
       .eq("workspace_id", workspace.id)
       .eq("pillar_key", pillar.pillarKey);
-    if (error) throw new Error(`Continuity pillar refresh failed: ${error.message}`);
+    if (error) throw new Error("Unable to refresh continuity pillars.");
   }
   return getContinuityEngineState();
 }
@@ -88,6 +97,7 @@ export async function updateContinuityPillar(pillarKey: string, coverageScore: n
   const supabase = await getSupabaseServerClient();
   const userId = await getRecallUserId();
   if (!supabase || !userId) throw new Error("Authentication and a workspace are required.");
+  if (!isContinuityPillarKey(pillarKey)) throw new Error("Invalid continuity pillar.");
   if (!Number.isInteger(coverageScore) || coverageScore < 0 || coverageScore > 100) throw new Error("Coverage score must be 0-100.");
   if (!["needs_attention", "in_progress", "ready"].includes(status)) throw new Error("Invalid continuity status.");
 
@@ -99,7 +109,8 @@ export async function updateContinuityPillar(pillarKey: string, coverageScore: n
     .eq("workspace_id", workspace.id)
     .eq("pillar_key", pillarKey)
     .select("*")
-    .single();
-  if (error) throw new Error(`Continuity pillar update failed: ${error.message}`);
+    .maybeSingle();
+  if (error) throw new Error("Unable to update continuity pillar.");
+  if (!data) throw new Error("Continuity pillar not found.");
   return data;
 }
