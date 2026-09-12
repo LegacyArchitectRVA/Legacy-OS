@@ -41,6 +41,7 @@ assert.equal(ready.ready, true);
 assert.deepEqual(ready.unresolvedDependencies, []);
 assert.equal(ready.actionReadiness.find((item) => item.actionId === "b")?.reason, "ready");
 assert.equal(ready.actionReadiness.find((item) => item.actionId === "b")?.title, "Review dependent account");
+assert.deepEqual(ready.actionReadiness.find((item) => item.actionId === "b")?.dependencyDetails, [{ actionId: "a", title: "Verify account inventory", state: "complete", resolved: true }]);
 
 const dependencyBlocked = buildSuccessorHandoff([
   { ...baseAction, state: "open" },
@@ -49,6 +50,7 @@ const dependencyBlocked = buildSuccessorHandoff([
 assert.equal(dependencyBlocked.ready, false);
 assert.deepEqual(dependencyBlocked.unresolvedDependencies, [{ actionId: "b", dependencyId: "a" }]);
 assert.equal(dependencyBlocked.actionReadiness.find((item) => item.actionId === "b")?.reason, "dependency_blocked");
+assert.deepEqual(dependencyBlocked.actionReadiness.find((item) => item.actionId === "b")?.dependencyDetails, [{ actionId: "a", title: "Verify account inventory", state: "open", resolved: false }]);
 
 const evidenceBlocked = buildSuccessorHandoff([evidenceRequired]);
 assert.equal(evidenceBlocked.ready, false);
@@ -86,5 +88,9 @@ const noExecutableAction = buildSuccessorHandoff([
   { ...evidenceRequired },
 ]);
 assert.equal(noExecutableAction.nextAction, null);
+
+const missingDependency = buildSuccessorHandoff([{ ...blockedByDependency, dependencies: ["missing"] }]);
+assert.deepEqual(missingDependency.actionReadiness[0].dependencyDetails, [{ actionId: "missing", title: "Missing action", state: "missing", resolved: false }]);
+assert.equal(missingDependency.actionReadiness[0].reason, "dependency_blocked");
 
 console.log("Successor handoff tests passed.");
