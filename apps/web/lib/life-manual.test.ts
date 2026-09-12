@@ -34,17 +34,39 @@ const memories: RecallMemoryRecord[] = [{
   provenanceComplete: true,
 }];
 
-const actions: SuccessorAction[] = [{
-  id: "action-1",
-  title: "Confirm vendor contact",
-  domain: "business",
-  instruction: "Contact the primary vendor and confirm the account status.",
-  state: "open",
-  evidenceRequired: true,
-  evidenceConfirmed: false,
-  dependencies: [],
-  notes: "Use the latest contact record.",
-}];
+const actions: SuccessorAction[] = [
+  {
+    id: "action-1",
+    title: "Confirm vendor contact",
+    domain: "business",
+    instruction: "Contact the primary vendor and confirm the account status.",
+    state: "open",
+    evidenceRequired: true,
+    evidenceConfirmed: false,
+    dependencies: [],
+    notes: "Use the latest contact record.",
+  },
+  {
+    id: "action-2",
+    title: "Prepare vendor handoff",
+    domain: "business",
+    instruction: "Prepare the vendor handoff package.",
+    state: "open",
+    evidenceRequired: false,
+    evidenceConfirmed: false,
+    dependencies: ["action-1"],
+  },
+  {
+    id: "action-3",
+    title: "Correct invalid completion",
+    domain: "business",
+    instruction: "Review and correct the completion record.",
+    state: "complete",
+    evidenceRequired: true,
+    evidenceConfirmed: false,
+    dependencies: [],
+  },
+];
 
 const document = buildLifeManualDocument({
   continuity,
@@ -63,8 +85,16 @@ assert.equal(document.pillars[4]?.title, "Vital Records");
 assert.equal(document.actions[0]?.evidenceConfirmed, false);
 assert.ok(document.openIssues.some((issue) => issue.includes("Digital continuity")));
 assert.ok(document.openIssues.some((issue) => issue.includes("evidence required")));
+assert.ok(document.openIssues.some((issue) => issue.includes("completed status needs correction")));
+assert.ok(document.openIssues.some((issue) => issue.includes("waiting on Prepare vendor handoff")));
 assert.equal(document.importantDecisions[0], "Keep the primary vendor relationship active.");
 assert.equal(document.memories[0]?.provenanceComplete, true);
-assert.ok(document.first72Hours.length > 0);
+assert.equal(document.handoff.ready, false);
+assert.equal(document.handoff.evidenceOutstanding, 1);
+assert.equal(document.handoff.invalidCompleted, 1);
+assert.equal(document.handoff.unresolvedDependencies, 1);
+assert.equal(document.handoff.nextAction?.actionId, "action-1");
+assert.equal(document.handoff.nextAction?.reason, "unblocks_downstream_work");
+assert.ok(document.first72Hours[0]?.includes("Contact the primary vendor"));
 
 console.log("Life Manual tests passed.");
