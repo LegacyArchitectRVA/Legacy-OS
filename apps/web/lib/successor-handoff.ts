@@ -2,6 +2,9 @@ import type { SuccessorAction } from "./successor-action-types";
 
 export interface SuccessorActionReadiness {
   actionId: string;
+  title: string;
+  domain: string;
+  instruction: string;
   ready: boolean;
   unresolvedDependencies: string[];
   evidenceRequired: boolean;
@@ -66,7 +69,7 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
           : action.evidenceRequired && !evidenceConfirmed
             ? "evidence_required"
             : "ready";
-    return { actionId: action.id, ready, unresolvedDependencies: dependencies, evidenceRequired: action.evidenceRequired, evidenceConfirmed, reason };
+    return { actionId: action.id, title: action.title, domain: action.domain, instruction: action.instruction, ready, unresolvedDependencies: dependencies, evidenceRequired: action.evidenceRequired, evidenceConfirmed, reason };
   });
 
   const counts = downstreamCounts(actions);
