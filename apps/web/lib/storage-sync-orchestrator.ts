@@ -29,7 +29,7 @@ type SupabaseLike = {
   from(table: string): {
     select(columns: string): SupabaseLike;
     eq(column: string, value: string): SupabaseLike;
-    maybeSingle(): Promise<QueryResult<any>>;
+    maybeSingle(): Promise<QueryResult<unknown>>;
     update(values: Record<string, unknown>): SupabaseLike;
   };
   rpc(name: string, args: Record<string, unknown>): Promise<QueryResult<SyncRunRecord>>;
@@ -60,7 +60,7 @@ async function getSource(supabase: SupabaseLike, sourceId: string): Promise<Stor
     .eq("id", sourceId)
     .maybeSingle();
   if (result.error) throwSyncError("Unable to resolve the storage source.");
-  if (!result.data) throwSyncError("Storage source not found.");
+  if (!result.data || typeof result.data !== "object") throwSyncError("Storage source not found.");
   return result.data as StorageSourceRecord;
 }
 
@@ -72,7 +72,7 @@ async function getDevice(supabase: SupabaseLike, deviceId: string, workspaceId: 
     .eq("workspace_id", workspaceId)
     .maybeSingle();
   if (result.error) throwSyncError("Unable to verify the source device.");
-  if (!result.data) throwSyncError("Source device not found.");
+  if (!result.data || typeof result.data !== "object") throwSyncError("Source device not found.");
   return result.data as DeviceRecord;
 }
 
@@ -88,7 +88,10 @@ async function assertSourceIsRunnable(
 }
 
 async function failSyncRun(supabase: SupabaseLike, syncRunId: string): Promise<void> {
-  await supabase.from("legacy_os_sync_runs").update({ status: "failed", error_code: "SYNC_EXECUTION_FAILED" }).eq("id", syncRunId);
+  await supabase
+    .from("legacy_os_sync_runs")
+    .update({ status: "failed", error_code: "SYNC_EXECUTION_FAILED" })
+    .eq("id", syncRunId);
 }
 
 export async function runStorageSync(
@@ -99,23 +102,18 @@ export async function runStorageSync(
   const maxBatches = dependencies.maxBatches ?? DEFAULT_MAX_BATCHES;
   if (!Number.isSafeInteger(maxBatches) || maxBatches < 1) throwSyncError("Invalid synchronization batch limit.");
 
-  const source = await getSource(supabase, syncRun.storage_source_id);
-  if (source.workspace_id !== syncRun.workspace_id) throwSyncError("Synchronization ownership mismatch.");
-  await assertSourceIsRunnable(supabase, source);
-
-  const connector = getConnector(source.source_type);
-  if (!connector) throwSyncError("No connector is available for this storage source.");
-
   let cursor: string | null = null;
   let batches = 0;
   let files = 0;
 
   try {
     while (batches < maxBatches) {
+      const source = await getSource(supabase, syncRun.storage_source_id);
+      if (source.workspace_id !== syncRun.workspace_id) throwSyncError("Synchronization ownership mismatch.");
       await assertSourceIsRunnable(supabase, source);
-      if (dependencies.supabase && (globalThis as { AbortSignal?: unknown }).AbortSignal) {
-        // The connector owns cancellation through its context signal when one is supplied.
-      }
+
+      const connector = getConnector(source.source_type);
+      if (!connector) throwSyncError("No connector is available for this storage source.");
 
       const context: StorageConnectorContext = {
         workspaceId: syncRun.workspace_id,
@@ -134,10 +132,10 @@ export async function runStorageSync(
 
       batches += 1;
       files += batch.files.length;
-      if (batch.complete) {
-        return { syncRun: rpcResult.data, batches, files };
+      if (batch.complete) return { syncRun: rpcResult.data, batches, files };
+      if (!batch.nextCursor || batch.nextCursor === cursor) {
+        throwSyncError("Connector returned an invalid continuation cursor.");
       }
-      if (!batch.nextCursor || batch.nextCursor === cursor) throwSyncError("Connector returned an invalid continuation cursor.");
       cursor = batch.nextCursor;
     }
 
