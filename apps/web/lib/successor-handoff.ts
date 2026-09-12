@@ -1,5 +1,12 @@
 import type { SuccessorAction } from "./successor-action-types";
 
+export interface SuccessorDependencyReadiness {
+  actionId: string;
+  title: string;
+  state: SuccessorAction["state"] | "missing";
+  resolved: boolean;
+}
+
 export interface SuccessorActionReadiness {
   actionId: string;
   title: string;
@@ -7,6 +14,7 @@ export interface SuccessorActionReadiness {
   instruction: string;
   ready: boolean;
   unresolvedDependencies: string[];
+  dependencyDetails: SuccessorDependencyReadiness[];
   evidenceRequired: boolean;
   evidenceConfirmed: boolean;
   reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed";
@@ -57,7 +65,16 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
   const blockedActions = actions.filter((action) => action.state === "blocked");
   const completedActions = actions.filter((action) => action.state === "complete");
   const actionReadiness = actions.map((action) => {
-    const dependencies = action.dependencies.filter((id) => byId.get(id)?.state !== "complete");
+    const dependencyDetails = action.dependencies.map((dependencyId) => {
+      const dependency = byId.get(dependencyId);
+      return {
+        actionId: dependencyId,
+        title: dependency?.title ?? "Missing action",
+        state: dependency?.state ?? "missing",
+        resolved: dependency?.state === "complete",
+      };
+    });
+    const dependencies = dependencyDetails.filter((dependency) => !dependency.resolved).map((dependency) => dependency.actionId);
     const evidenceConfirmed = Boolean(action.evidenceConfirmed) || action.state === "complete";
     const ready = action.state === "open" && dependencies.length === 0 && (!action.evidenceRequired || evidenceConfirmed);
     const reason: SuccessorActionReadiness["reason"] = action.state === "complete"
@@ -69,7 +86,7 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
           : action.evidenceRequired && !evidenceConfirmed
             ? "evidence_required"
             : "ready";
-    return { actionId: action.id, title: action.title, domain: action.domain, instruction: action.instruction, ready, unresolvedDependencies: dependencies, evidenceRequired: action.evidenceRequired, evidenceConfirmed, reason };
+    return { actionId: action.id, title: action.title, domain: action.domain, instruction: action.instruction, ready, unresolvedDependencies: dependencies, dependencyDetails, evidenceRequired: action.evidenceRequired, evidenceConfirmed, reason };
   });
 
   const counts = downstreamCounts(actions);
