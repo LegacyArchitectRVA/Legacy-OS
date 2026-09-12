@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-accessibility.mjs && node --experimental-strip-types scripts/test-successor-workspace.mjs && node --experimental-strip-types lib/successor-handoff.test.ts && node --experimental-strip-types lib/successor-handoff-report.test.ts && node --experimental-strip-types lib/continuity-intelligence.test.ts && node --experimental-strip-types lib/api-request.test.ts",
+    "test": "node scripts/test-accessibility.mjs && node --experimental-strip-types scripts/test-successor-workspace.mjs && node --experimental-strip-types lib/successor-handoff.test.ts && node --experimental-strip-types lib/successor-handoff-report.test.ts && node --experimental-strip-types lib/continuity-intelligence.test.ts && node --experimental-strip-types app/lib/api-request.test.ts",
     "security": "node scripts/security-ci.mjs"
   },
   "dependencies": {
