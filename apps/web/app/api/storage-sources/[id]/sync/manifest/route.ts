@@ -53,13 +53,13 @@ function normalizeFile(value: unknown): ManifestFile | null {
   const mimeType = validOptionalText(value.mime_type, 255);
   const contentHash = validOptionalText(value.content_hash, 64);
   const modifiedAt = validOptionalText(value.modified_at, 64);
-  const size = value.size_bytes;
+  const rawSize = value.size_bytes;
   const metadata = value.metadata;
 
   if (!externalId || externalId.length > 2048 || !name || name.length > 512) return null;
   if (path === undefined || mimeType === undefined || contentHash === undefined || modifiedAt === undefined) return null;
   if (contentHash !== null && !SHA256.test(contentHash)) return null;
-  if (size !== undefined && size !== null && (!Number.isSafeInteger(size) || size < 0)) return null;
+  if (rawSize !== undefined && rawSize !== null && (typeof rawSize !== "number" || !Number.isSafeInteger(rawSize) || rawSize < 0)) return null;
   if (metadata !== undefined && !isRecord(metadata)) return null;
   if (metadata && Buffer.byteLength(JSON.stringify(metadata), "utf8") > MAX_METADATA_BYTES) return null;
 
@@ -68,7 +68,7 @@ function normalizeFile(value: unknown): ManifestFile | null {
     path,
     name,
     mime_type: mimeType,
-    size_bytes: size === undefined ? null : size,
+    size_bytes: rawSize === undefined ? null : rawSize,
     content_hash: contentHash,
     modified_at: modifiedAt,
     metadata: metadata ?? {},
