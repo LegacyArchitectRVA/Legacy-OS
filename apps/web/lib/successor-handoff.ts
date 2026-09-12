@@ -22,7 +22,7 @@ export interface SuccessorActionReadiness {
 
 export interface SuccessorNextAction {
   actionId: string;
-  reason: "unblocks_downstream_work" | "continue_in_progress";
+  reason: "unblocks_downstream_work" | "resolve_evidence_gap" | "continue_in_progress";
   downstreamCount: number;
 }
 
@@ -104,12 +104,16 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
   });
   const readyOpen = actions.filter((action) => readinessById.get(action.id)?.ready);
   const nextOpen = [...readyOpen].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || a.title.localeCompare(b.title))[0];
+  const nextEvidence = [...evidenceOutstanding]
+    .sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || a.title.localeCompare(b.title))[0];
   const nextInProgress = executableInProgress[0];
   const nextAction: SuccessorNextAction | null = nextOpen
     ? { actionId: nextOpen.id, reason: "unblocks_downstream_work", downstreamCount: counts.get(nextOpen.id) ?? 0 }
-    : nextInProgress
-      ? { actionId: nextInProgress.id, reason: "continue_in_progress", downstreamCount: counts.get(nextInProgress.id) ?? 0 }
-      : null;
+    : nextEvidence
+      ? { actionId: nextEvidence.id, reason: "resolve_evidence_gap", downstreamCount: counts.get(nextEvidence.id) ?? 0 }
+      : nextInProgress
+        ? { actionId: nextInProgress.id, reason: "continue_in_progress", downstreamCount: counts.get(nextInProgress.id) ?? 0 }
+        : null;
 
   return {
     ready: blockedActions.length === 0 && unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0 && invalidCompletedActions.length === 0,
