@@ -1,0 +1,1 @@
+{"name":"Legacy OS","short_name":"Legacy OS","start_url":"/os","scope":"/","display":"standalone","orientation":"portrait-primary","background_color":"#050505","theme_color":"#050505","description":"Legacy OS continuity command center","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
