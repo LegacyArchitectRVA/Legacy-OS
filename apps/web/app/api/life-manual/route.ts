@@ -22,7 +22,13 @@ export async function GET() {
 
     const document = buildLifeManualDocument({
       continuity: continuity.snapshot,
-      pillars: continuity.pillars,
+      pillars: continuity.pillars.map((pillar) => ({
+        pillarKey: pillar.pillar_key,
+        name: pillar.name,
+        coverageScore: pillar.coverage_score,
+        status: pillar.status,
+        matchedMemories: pillar.matched_memories ?? 0,
+      })),
       actions,
       memories,
     });
