@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, getSupabaseServerClient } from "../../../lib/supabase/server";
-import { ApiRequestError, isRecord, jsonResponseHeaders, parseJsonBody, requiredString } from "../../../lib/api-request";
+import { ApiRequestError, isRecord, jsonResponseHeaders, parseJsonBody, requiredString } from "../../lib/api-request";
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_FINGERPRINT_LENGTH = 256;
