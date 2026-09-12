@@ -88,6 +88,18 @@ async function assertSourceIsRunnable(
   }
 }
 
+async function claimSyncRun(
+  supabase: SupabaseLike,
+  syncRunId: string,
+  workspaceId: string,
+): Promise<SyncRunRecord> {
+  const result = await supabase.rpc("claim_legacy_os_sync_run", { p_sync_run_id: syncRunId });
+  if (result.error || !result.data) throwSyncError("Synchronization run is not eligible for execution.");
+  if (result.data.workspace_id !== workspaceId) throwSyncError("Synchronization ownership mismatch.");
+  if (result.data.status !== "running") throwSyncError("Synchronization run was not claimed.");
+  return result.data;
+}
+
 async function failSyncRun(supabase: SupabaseLike, syncRunId: string): Promise<void> {
   await supabase
     .from("legacy_os_sync_runs")
@@ -106,26 +118,30 @@ export async function runStorageSync(
   let cursor: string | null = null;
   let batches = 0;
   let files = 0;
+  let claimed = false;
 
   try {
+    const claimedRun = await claimSyncRun(supabase, syncRun.id, syncRun.workspace_id);
+    claimed = true;
+
     while (batches < maxBatches) {
-      const source = await getSource(supabase, syncRun.storage_source_id);
-      if (source.workspace_id !== syncRun.workspace_id) throwSyncError("Synchronization ownership mismatch.");
+      const source = await getSource(supabase, claimedRun.storage_source_id);
+      if (source.workspace_id !== claimedRun.workspace_id) throwSyncError("Synchronization ownership mismatch.");
       await assertSourceIsRunnable(supabase, source);
 
       const connector = getConnector(source.source_type);
       if (!connector) throwSyncError("No connector is available for this storage source.");
 
       const context: StorageConnectorContext = {
-        workspaceId: syncRun.workspace_id,
-        sourceId: syncRun.storage_source_id,
+        workspaceId: claimedRun.workspace_id,
+        sourceId: claimedRun.storage_source_id,
         deviceId: source.device_id,
-        syncRunId: syncRun.id,
+        syncRunId: claimedRun.id,
       };
       const batch = normalizeManifestBatch(await connector.enumerate(context, cursor));
       const rpcResult = await supabase.rpc("ingest_legacy_os_manifest", {
-        p_sync_run_id: syncRun.id,
-        p_source_id: syncRun.storage_source_id,
+        p_sync_run_id: claimedRun.id,
+        p_source_id: claimedRun.storage_source_id,
         p_files: batch.files,
         p_complete: batch.complete,
       });
@@ -142,7 +158,7 @@ export async function runStorageSync(
 
     throwSyncError("Synchronization exceeded the maximum batch limit.");
   } catch (error) {
-    await failSyncRun(supabase, syncRun.id);
+    if (claimed) await failSyncRun(supabase, syncRun.id);
     throw error;
   }
 }
