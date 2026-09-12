@@ -1,5 +1,13 @@
 import type { SuccessorAction } from "./successor-action-types";
 
+export interface SuccessorActionReadiness {
+  actionId: string;
+  ready: boolean;
+  unresolvedDependencies: string[];
+  evidenceRequired: boolean;
+  evidenceConfirmed: boolean;
+}
+
 export interface SuccessorHandoff {
   ready: boolean;
   completionPercent: number;
@@ -9,6 +17,7 @@ export interface SuccessorHandoff {
   completedActions: SuccessorAction[];
   unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>;
   evidenceOutstanding: SuccessorAction[];
+  actionReadiness: SuccessorActionReadiness[];
 }
 
 export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHandoff {
@@ -16,6 +25,17 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
   const unresolvedDependencies = actions.flatMap((action) => action.dependencies.filter((id) => byId.get(id)?.state !== "complete").map((dependencyId) => ({ actionId: action.id, dependencyId })));
   const evidenceOutstanding = actions.filter((action) => action.evidenceRequired && !action.evidenceConfirmed && action.state !== "complete");
   const completedActions = actions.filter((action) => action.state === "complete");
+  const actionReadiness = actions.map((action) => {
+    const dependencies = action.dependencies.filter((id) => byId.get(id)?.state !== "complete");
+    const evidenceConfirmed = Boolean(action.evidenceConfirmed) || action.state === "complete";
+    return {
+      actionId: action.id,
+      ready: action.state === "open" && dependencies.length === 0 && (!action.evidenceRequired || evidenceConfirmed),
+      unresolvedDependencies: dependencies,
+      evidenceRequired: action.evidenceRequired,
+      evidenceConfirmed,
+    };
+  });
   return {
     ready: unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0,
     completionPercent: actions.length ? Math.round((completedActions.length / actions.length) * 100) : 0,
@@ -25,5 +45,6 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
     completedActions,
     unresolvedDependencies,
     evidenceOutstanding,
+    actionReadiness,
   };
 }
