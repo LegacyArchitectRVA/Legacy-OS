@@ -1,11 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Device = { id: string; name: string; platform: string; status: string };
 type Source = { id: string; name: string; source_type: string; provider: string | null; status: string };
-
-type Props = { workspaceId: string | null; devices: Device[]; sources: Source[]; onChanged: () => void };
+type Props = { workspaceId: string | null; devices: Device[]; sources: Source[] };
 
 const platforms = ["windows", "macos", "linux", "android", "ios", "nas", "unknown"];
 const sourceTypes = ["local_filesystem", "external_drive", "nas", "cloud_storage", "provider_api"];
@@ -16,7 +16,8 @@ async function readResponse(response: Response) {
   return body;
 }
 
-export default function LegacyOsControls({ workspaceId, devices, sources, onChanged }: Props) {
+export default function LegacyOsControls({ workspaceId, devices, sources }: Props) {
+  const router = useRouter();
   const [deviceName, setDeviceName] = useState("");
   const [platform, setPlatform] = useState("unknown");
   const [sourceName, setSourceName] = useState("");
@@ -33,14 +34,14 @@ export default function LegacyOsControls({ workspaceId, devices, sources, onChan
     setBusy("device"); setError(""); setMessage("");
     try {
       await readResponse(await fetch("/api/devices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspace_id: workspaceId, name: deviceName.trim() || "This device", platform, device_key_fingerprint: crypto.randomUUID() }) }));
-      setDeviceName(""); setMessage("Device registered as pending."); onChanged();
+      setDeviceName(""); setMessage("Device registered as pending."); router.refresh();
     } catch (value) { setError(value instanceof Error ? value.message : "Unable to register the device."); }
     finally { setBusy(""); }
   }
 
   async function changeDevice(id: string, status: "active" | "revoked") {
     setBusy(`device:${id}`); setError(""); setMessage("");
-    try { await readResponse(await fetch(`/api/devices/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) })); setMessage(`Device ${status}.`); onChanged(); }
+    try { await readResponse(await fetch(`/api/devices/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) })); setMessage(`Device ${status}.`); router.refresh(); }
     catch (value) { setError(value instanceof Error ? value.message : "Unable to update the device."); }
     finally { setBusy(""); }
   }
@@ -51,14 +52,14 @@ export default function LegacyOsControls({ workspaceId, devices, sources, onChan
     setBusy("source"); setError(""); setMessage("");
     try {
       await readResponse(await fetch("/api/storage-sources", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspace_id: workspaceId, name: sourceName.trim(), source_type: sourceType, provider: provider.trim() || undefined, device_id: deviceId || undefined }) }));
-      setSourceName(""); setProvider(""); setDeviceId(""); setMessage("Source registered as pending."); onChanged();
+      setSourceName(""); setProvider(""); setDeviceId(""); setMessage("Source registered as pending."); router.refresh();
     } catch (value) { setError(value instanceof Error ? value.message : "Unable to register the source."); }
     finally { setBusy(""); }
   }
 
   async function changeSource(id: string, status: "active" | "paused" | "revoked") {
     setBusy(`source:${id}`); setError(""); setMessage("");
-    try { await readResponse(await fetch(`/api/storage-sources/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) })); setMessage(`Source ${status}.`); onChanged(); }
+    try { await readResponse(await fetch(`/api/storage-sources/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) })); setMessage(`Source ${status}.`); router.refresh(); }
     catch (value) { setError(value instanceof Error ? value.message : "Unable to update the source."); }
     finally { setBusy(""); }
   }
