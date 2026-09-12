@@ -55,4 +55,9 @@ const evidenceConfirmed = buildSuccessorHandoff([{ ...evidenceRequired, evidence
 assert.equal(evidenceConfirmed.ready, true);
 assert.equal(evidenceConfirmed.evidenceOutstanding.length, 0);
 
+const explicitlyBlocked = buildSuccessorHandoff([{ ...baseAction, state: "blocked" }]);
+assert.equal(explicitlyBlocked.ready, false);
+assert.deepEqual(explicitlyBlocked.blockedActions.map((action) => action.id), ["a"]);
+assert.equal(explicitlyBlocked.actionReadiness[0].ready, false);
+
 console.log("Successor handoff tests passed.");
