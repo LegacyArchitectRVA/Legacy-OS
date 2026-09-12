@@ -7,13 +7,23 @@ const actions = [
   { id: "b", state: "open", evidenceRequired: false, dependencies: ["a"] },
   { id: "c", state: "open", evidenceRequired: true, evidenceConfirmed: false, dependencies: [] },
   { id: "d", state: "open", evidenceRequired: false, dependencies: ["c"] },
+  { id: "e", state: "in_progress", evidenceRequired: true, evidenceConfirmed: true, dependencies: [] },
 ];
 
 const graph = buildSuccessorDependencyGraph(actions.map(({ id, dependencies, state, evidenceRequired, evidenceConfirmed }) => ({ id, dependencyIds: dependencies, status: state, evidenceRequired, evidenceConfirmed })));
 assert.deepEqual(graph.blockedActionIds.sort(), ["c", "d"]);
-assert.deepEqual(graph.readyActionIds, ["b"]);
+assert.deepEqual(graph.readyActionIds, ["b", "e"]);
 
 const summary = summarizeSuccessorActions(actions);
-assert.deepEqual(summary, { total: 4, ready: 3, blocked: 0, inProgress: 0, complete: 1 });
+assert.deepEqual(summary, {
+  total: 5,
+  ready: 2,
+  blocked: 0,
+  inProgress: 1,
+  complete: 1,
+  evidenceRequired: 2,
+  evidenceConfirmed: 1,
+  evidenceGaps: 1,
+});
 
 console.log("Successor workspace regression checks passed.");
