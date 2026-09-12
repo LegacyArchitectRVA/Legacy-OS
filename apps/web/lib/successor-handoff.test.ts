@@ -56,6 +56,7 @@ const evidenceBlocked = buildSuccessorHandoff([evidenceRequired]);
 assert.equal(evidenceBlocked.ready, false);
 assert.deepEqual(evidenceBlocked.evidenceOutstanding.map((action) => action.id), ["c"]);
 assert.equal(evidenceBlocked.actionReadiness[0].reason, "evidence_required");
+assert.deepEqual(evidenceBlocked.nextAction, { actionId: "c", reason: "resolve_evidence_gap", downstreamCount: 0 });
 
 const evidenceConfirmed = buildSuccessorHandoff([{ ...evidenceRequired, evidenceConfirmed: true }]);
 assert.equal(evidenceConfirmed.ready, true);
@@ -81,6 +82,7 @@ assert.deepEqual(invalidCompletedEvidence.invalidCompletedActions.map((action) =
 assert.equal(invalidCompletedEvidence.completionPercent, 0);
 assert.equal(invalidCompletedEvidence.actionReadiness[0].reason, "completion_invalid");
 assert.equal(invalidCompletedEvidence.actionReadiness[0].evidenceConfirmed, false);
+assert.equal(invalidCompletedEvidence.nextAction, null);
 
 const invalidCompletedDependency = buildSuccessorHandoff([
   { ...baseAction, state: "open" },
@@ -107,7 +109,7 @@ const noExecutableAction = buildSuccessorHandoff([
   { ...baseAction, state: "blocked" },
   { ...evidenceRequired },
 ]);
-assert.equal(noExecutableAction.nextAction, null);
+assert.deepEqual(noExecutableAction.nextAction, { actionId: "c", reason: "resolve_evidence_gap", downstreamCount: 0 });
 
 const missingDependency = buildSuccessorHandoff([{ ...blockedByDependency, dependencies: ["missing"] }]);
 assert.deepEqual(missingDependency.actionReadiness[0].dependencyDetails, [{ actionId: "missing", title: "Missing action", state: "missing", resolved: false }]);
