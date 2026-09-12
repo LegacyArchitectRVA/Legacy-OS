@@ -1,5 +1,5 @@
 import type { SuccessorAction } from "./successor-action-types";
-import { buildSuccessorHandoff } from "./successor-handoff";
+import { buildSuccessorHandoff } from "./successor-handoff.ts";
 
 export interface SuccessorWorkspaceModel {
   actions: SuccessorAction[];
