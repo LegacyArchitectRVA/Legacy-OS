@@ -30,6 +30,23 @@ export type ManifestBatch = {
   nextCursor: string | null;
 };
 
+export type ManifestFileInput = {
+  externalId: string;
+  path: string;
+  name: string;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  contentHash?: string | null;
+  modifiedAt?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+export type ManifestBatchInput = {
+  files: ManifestFileInput[];
+  complete: boolean;
+  nextCursor: string | null;
+};
+
 export interface StorageConnector {
   readonly sourceType: StorageSourceType;
   enumerate(context: StorageConnectorContext, cursor?: string | null): Promise<ManifestBatch>;
@@ -61,22 +78,26 @@ export function normalizeManifestFile(input: unknown): ManifestFile {
     throw new Error("Manifest path is invalid.");
   }
 
-  const sizeBytes = record.sizeBytes === null || record.sizeBytes === undefined ? null : record.sizeBytes;
-  if (sizeBytes !== null && (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0)) {
+  const rawSizeBytes = record.sizeBytes;
+  const sizeBytes = rawSizeBytes === null || rawSizeBytes === undefined ? null : rawSizeBytes;
+  if (sizeBytes !== null && (typeof sizeBytes !== "number" || !Number.isSafeInteger(sizeBytes) || sizeBytes < 0)) {
     throw new Error("Manifest file size is invalid.");
   }
 
-  const contentHash = record.contentHash === null || record.contentHash === undefined ? null : boundedString(record.contentHash, 64);
+  const rawContentHash = record.contentHash;
+  const contentHash = rawContentHash === null || rawContentHash === undefined ? null : boundedString(rawContentHash, 64);
   if (contentHash !== null && !SHA256_PATTERN.test(contentHash)) {
     throw new Error("Manifest content hash is invalid.");
   }
 
-  const modifiedAt = record.modifiedAt === null || record.modifiedAt === undefined ? null : boundedString(record.modifiedAt, 64);
+  const rawModifiedAt = record.modifiedAt;
+  const modifiedAt = rawModifiedAt === null || rawModifiedAt === undefined ? null : boundedString(rawModifiedAt, 64);
   if (modifiedAt !== null && Number.isNaN(Date.parse(modifiedAt))) {
     throw new Error("Manifest modification time is invalid.");
   }
 
-  const mimeType = record.mimeType === null || record.mimeType === undefined ? null : boundedString(record.mimeType, 255);
+  const rawMimeType = record.mimeType;
+  const mimeType = rawMimeType === null || rawMimeType === undefined ? null : boundedString(rawMimeType, 255);
   const metadata = record.metadata === undefined ? {} : record.metadata;
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     throw new Error("Manifest metadata is invalid.");
@@ -87,14 +108,14 @@ export function normalizeManifestFile(input: unknown): ManifestFile {
     path,
     name,
     mimeType,
-    sizeBytes: sizeBytes as number | null,
+    sizeBytes,
     contentHash,
     modifiedAt,
     metadata: metadata as Record<string, unknown>,
   };
 }
 
-export function normalizeManifestBatch(input: ManifestBatch): ManifestBatch {
+export function normalizeManifestBatch(input: ManifestBatchInput): ManifestBatch {
   if (!Array.isArray(input.files) || input.files.length > MAX_BATCH_SIZE) {
     throw new Error("Manifest batch is invalid.");
   }
