@@ -9,6 +9,12 @@ export interface SuccessorActionReadiness {
   reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed";
 }
 
+export interface SuccessorNextAction {
+  actionId: string;
+  reason: "unblocks_downstream_work" | "continue_in_progress";
+  downstreamCount: number;
+}
+
 export interface SuccessorHandoff {
   ready: boolean;
   completionPercent: number;
@@ -19,6 +25,26 @@ export interface SuccessorHandoff {
   unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>;
   evidenceOutstanding: SuccessorAction[];
   actionReadiness: SuccessorActionReadiness[];
+  nextAction: SuccessorNextAction | null;
+}
+
+function downstreamCounts(actions: SuccessorAction[]): Map<string, number> {
+  const counts = new Map(actions.map((action) => [action.id, 0]));
+  const byId = new Map(actions.map((action) => [action.id, action]));
+
+  for (const action of actions) {
+    const seen = new Set<string>();
+    const visit = (id: string) => {
+      const dependency = byId.get(id);
+      if (!dependency || seen.has(id)) return;
+      seen.add(id);
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+      for (const dependencyId of dependency.dependencies) visit(dependencyId);
+    };
+    for (const dependencyId of action.dependencies) visit(dependencyId);
+  }
+
+  return counts;
 }
 
 export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHandoff {
@@ -42,6 +68,23 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
             : "ready";
     return { actionId: action.id, ready, unresolvedDependencies: dependencies, evidenceRequired: action.evidenceRequired, evidenceConfirmed, reason };
   });
+
+  const counts = downstreamCounts(actions);
+  const readinessById = new Map(actionReadiness.map((item) => [item.actionId, item]));
+  const executableInProgress = actions.filter((action) => {
+    if (action.state !== "in_progress") return false;
+    const readiness = readinessById.get(action.id);
+    return Boolean(readiness && readiness.unresolvedDependencies.length === 0 && (!readiness.evidenceRequired || readiness.evidenceConfirmed));
+  });
+  const readyOpen = actions.filter((action) => readinessById.get(action.id)?.ready);
+  const nextOpen = [...readyOpen].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) || a.title.localeCompare(b.title))[0];
+  const nextInProgress = executableInProgress[0];
+  const nextAction: SuccessorNextAction | null = nextOpen
+    ? { actionId: nextOpen.id, reason: "unblocks_downstream_work", downstreamCount: counts.get(nextOpen.id) ?? 0 }
+    : nextInProgress
+      ? { actionId: nextInProgress.id, reason: "continue_in_progress", downstreamCount: counts.get(nextInProgress.id) ?? 0 }
+      : null;
+
   return {
     ready: blockedActions.length === 0 && unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0,
     completionPercent: actions.length ? Math.round((completedActions.length / actions.length) * 100) : 0,
@@ -52,5 +95,6 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
     unresolvedDependencies,
     evidenceOutstanding,
     actionReadiness,
+    nextAction,
   };
 }
