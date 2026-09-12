@@ -40,6 +40,7 @@ const ready = buildSuccessorHandoff([
 assert.equal(ready.ready, true);
 assert.deepEqual(ready.unresolvedDependencies, []);
 assert.equal(ready.actionReadiness.find((item) => item.actionId === "b")?.reason, "ready");
+assert.equal(ready.actionReadiness.find((item) => item.actionId === "b")?.title, "Review dependent account");
 
 const dependencyBlocked = buildSuccessorHandoff([
   { ...baseAction, state: "open" },
@@ -67,5 +68,23 @@ assert.equal(explicitlyBlocked.actionReadiness[0].reason, "explicitly_blocked");
 
 const completed = buildSuccessorHandoff([{ ...baseAction, state: "complete" }]);
 assert.equal(completed.actionReadiness[0].reason, "completed");
+assert.equal(completed.nextAction, null);
+
+const prioritized = buildSuccessorHandoff([
+  { ...baseAction, id: "a", title: "Foundation task" },
+  { ...baseAction, id: "b", title: "Downstream task 1", dependencies: ["a"] },
+  { ...baseAction, id: "c", title: "Downstream task 2", dependencies: ["a"] },
+  { ...baseAction, id: "d", title: "Blocked alternative", state: "blocked" },
+]);
+assert.deepEqual(prioritized.nextAction, { actionId: "a", reason: "unblocks_downstream_work", downstreamCount: 2 });
+
+const inProgressFallback = buildSuccessorHandoff([{ ...baseAction, state: "in_progress" }]);
+assert.deepEqual(inProgressFallback.nextAction, { actionId: "a", reason: "continue_in_progress", downstreamCount: 0 });
+
+const noExecutableAction = buildSuccessorHandoff([
+  { ...baseAction, state: "blocked" },
+  { ...evidenceRequired },
+]);
+assert.equal(noExecutableAction.nextAction, null);
 
 console.log("Successor handoff tests passed.");
