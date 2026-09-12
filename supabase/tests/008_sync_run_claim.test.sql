@@ -14,11 +14,14 @@ values ('00000000-0000-0000-0000-000000000131', 'Sync Test Workspace', '00000000
 insert into public.workspace_members (workspace_id, user_id, role)
 values ('00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000032', 'member');
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000031', false);
+
 insert into public.legacy_os_storage_sources
   (id, workspace_id, created_by, name, source_type, status)
 values
-  ('00000000-0000-0000-0000-000000000331', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000032', 'Active Source', 'provider_api', 'active'),
-  ('00000000-0000-0000-0000-000000000332', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000032', 'Paused Source', 'provider_api', 'paused');
+  ('00000000-0000-0000-0000-000000000331', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000031', 'Active Source', 'provider_api', 'active'),
+  ('00000000-0000-0000-0000-000000000332', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000031', 'Paused Source', 'provider_api', 'paused');
 
 insert into public.legacy_os_sync_runs
   (id, workspace_id, storage_source_id, status)
@@ -31,7 +34,6 @@ select ok(has_function_privilege('authenticated', 'public.claim_legacy_os_sync_r
 select ok(not has_function_privilege('anon', 'public.claim_legacy_os_sync_run(uuid)', 'execute'),
   'anonymous users cannot claim synchronization runs');
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000032', false);
 
 select lives_ok($$select * from public.claim_legacy_os_sync_run('00000000-0000-0000-0000-000000000431')$$,
@@ -45,7 +47,7 @@ select throws_ok($$select * from public.claim_legacy_os_sync_run('00000000-0000-
 select throws_ok($$select * from public.claim_legacy_os_sync_run('00000000-0000-0000-0000-000000000432')$$,
   'P0001', null, 'a run for an inactive source cannot be claimed');
 
-set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000033', false);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000033', false);
 select throws_ok($$select * from public.claim_legacy_os_sync_run('00000000-0000-0000-0000-000000000431')$$,
   'P0001', null, 'an outsider cannot claim another workspace run');
 
