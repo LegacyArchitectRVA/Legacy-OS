@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, getSupabaseServerClient } from "../../../../lib/supabase/server";
-import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody } from "../../../../lib/api-request";
+import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody } from "../../../lib/api-request";
 
 type RouteContext = { params: Promise<{ id: string }> };
 const MAX_BODY_BYTES = 8 * 1024;
