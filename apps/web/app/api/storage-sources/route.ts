@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, getSupabaseServerClient } from "../../../lib/supabase/server";
-import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody, requiredString } from "../../lib/api-request";
+import { ApiRequestError, isRecord, jsonResponseHeaders, optionalString, parseJsonBody, requiredString } from "../../../lib/api-request";
 
 const MAX_BODY_BYTES = 24 * 1024;
 const SOURCE_TYPES = new Set(["local_filesystem", "external_drive", "nas", "cloud_storage", "provider_api"]);
