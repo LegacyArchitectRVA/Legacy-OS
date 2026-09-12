@@ -9,6 +9,7 @@ export interface SuccessorAction {
   evidenceRequired: boolean;
   evidenceConfirmed?: boolean;
   dependencies: string[];
+  notes?: string;
   updatedAt?: string;
 }
 
