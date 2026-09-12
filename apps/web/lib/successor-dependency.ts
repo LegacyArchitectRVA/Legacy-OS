@@ -53,7 +53,7 @@ export function buildSuccessorDependencyGraph(actions: DependencyAction[]): Succ
     const blocks = actions.filter((candidate) => (candidate.dependencyIds ?? []).includes(action.id)).map((candidate) => candidate.id);
     return { actionId: action.id, dependsOn, blocks, reason: dependsOn.length ? "This action depends on another successor action." : "No explicit action dependency is recorded." };
   });
-  const blockedActionIds = actions.filter((action) => (action.dependencyIds ?? []).some((id) => byId.get(id)?.status !== "complete") || (action.evidenceRequired === true && action.evidenceConfirmed !== true)).map((action) => action.id);
+  const blockedActionIds = actions.filter((action) => action.status === "blocked" || (action.dependencyIds ?? []).some((id) => byId.get(id)?.status !== "complete") || (action.evidenceRequired === true && action.evidenceConfirmed !== true)).map((action) => action.id);
   const blocked = new Set(blockedActionIds);
   const readyActionIds = actions.filter((action) => !blocked.has(action.id) && action.status !== "complete").map((action) => action.id);
   return { dependencies, blockedActionIds, readyActionIds };
