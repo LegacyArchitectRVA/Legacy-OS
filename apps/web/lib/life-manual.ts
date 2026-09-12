@@ -35,7 +35,11 @@ export interface LifeManualDocument {
     evidenceOutstanding: number;
     invalidCompleted: number;
     unresolvedDependencies: number;
-    nextAction: { actionId: string; reason: "unblocks_downstream_work" | "continue_in_progress"; downstreamCount: number } | null;
+    nextAction: {
+      actionId: string;
+      reason: "unblocks_downstream_work" | "resolve_evidence_gap" | "continue_in_progress";
+      downstreamCount: number;
+    } | null;
   };
   first72Hours: string[];
   pillars: LifeManualPillarSection[];
@@ -124,9 +128,14 @@ export function buildLifeManualDocument(input: {
     .sort((a, b) => a.title.localeCompare(b.title));
 
   const first72Hours = unique([
-    ...(firstAction ? [firstAction.instruction] : []),
+    ...(firstAction
+      ? [handoff.nextAction?.reason === "resolve_evidence_gap" ? `Resolve evidence for ${firstAction.title}.` : firstAction.instruction]
+      : []),
     ...readyActions.slice(0, 4).map((item) => item.instruction),
-    ...handoff.evidenceOutstanding.slice(0, 2).map((action) => `Resolve evidence for ${action.title}.`),
+    ...handoff.evidenceOutstanding
+      .filter((action) => action.id !== handoff.nextAction?.actionId)
+      .slice(0, 2)
+      .map((action) => `Resolve evidence for ${action.title}.`),
     ...handoff.blockedActions.slice(0, 2).map((action) => `Address the blocker for ${action.title}.`),
     ...handoff.invalidCompletedActions.slice(0, 2).map((action) => `Correct the completion status for ${action.title}.`),
     ...openIssues.slice(0, 3),
