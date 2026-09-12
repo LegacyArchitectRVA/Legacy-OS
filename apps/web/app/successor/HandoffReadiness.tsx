@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { HandoffReport } from "./HandoffReport";
 
-interface HandoffActionReadiness { actionId: string; title: string; domain: string; instruction: string; ready: boolean; unresolvedDependencies: string[]; evidenceRequired: boolean; evidenceConfirmed: boolean; reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed"; }
+interface DependencyDetail { actionId: string; title: string; state: "open" | "in_progress" | "blocked" | "complete" | "missing"; resolved: boolean; }
+interface HandoffActionReadiness { actionId: string; title: string; domain: string; instruction: string; ready: boolean; unresolvedDependencies: string[]; dependencyDetails: DependencyDetail[]; evidenceRequired: boolean; evidenceConfirmed: boolean; reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed"; }
 interface HandoffNextAction { actionId: string; reason: "unblocks_downstream_work" | "continue_in_progress"; downstreamCount: number; }
 interface HandoffReadiness { ready: boolean; completionPercent: number; openActions: number; blockedActions: number; inProgressActions: number; completedActions: number; unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>; evidenceOutstanding: Array<{ id: string; title: string; domain: string }>; actionReadiness: HandoffActionReadiness[]; nextAction: HandoffNextAction | null; }
 interface Pillar { pillar_key: string; name: string; coverage_score: number; status: "needs_attention" | "in_progress" | "ready"; matched_memories?: number; }
@@ -17,6 +18,14 @@ const readinessReason = (reason: HandoffActionReadiness["reason"]): string => ({
   evidence_required: "Evidence required",
   completed: "Completed",
 }[reason]);
+
+const dependencyState = (state: DependencyDetail["state"]) => ({
+  open: "Open",
+  in_progress: "In progress",
+  blocked: "Blocked",
+  complete: "Complete",
+  missing: "Missing",
+}[state]);
 
 export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionId: string) => void }) {
   const [data, setData] = useState<HandoffReadiness | null>(null);
@@ -57,7 +66,7 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Handoff Readiness</p><h2 className="mt-1 text-xl font-semibold">{data.ready ? "Ready for a clean handoff" : "Handoff needs attention"}</h2></div><div className="text-right"><div className="text-3xl font-semibold">{data.completionPercent}%</div><div className="text-xs text-white/40">complete</div></div></div>
       {nextAction && <div className="mt-5 rounded-xl border border-[#e7b84b]/30 bg-[#e7b84b]/[0.07] p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Do this next</p><h3 className="mt-1 text-lg font-semibold">{nextAction.title}</h3><p className="mt-1 text-xs uppercase tracking-wide text-white/35">{nextAction.domain}</p><p className="mt-2 text-sm text-white/55">{nextAction.instruction}</p><p className="mt-2 text-sm text-white/50">{data.nextAction?.reason === "unblocks_downstream_work" ? `Completing this unblocks ${data.nextAction.downstreamCount} downstream ${data.nextAction.downstreamCount === 1 ? "action" : "actions"}.` : "This action is already in progress and is the next executable step."}</p></div><button onClick={() => onSelectAction?.(nextAction.actionId)} className="rounded-lg border border-[#e7b84b]/30 px-3 py-2 text-sm text-[#e7b84b] hover:bg-[#e7b84b]/10">Open action</button></div></div>}
       {!data.ready && <div className="mt-5"><p className="text-sm text-white/55">Resolve these items before treating the workspace as successor-ready.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{issues.slice(0, 8).map((issue) => <button key={issue.key} onClick={() => onSelectAction?.(issue.actionId)} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-sm text-white/60 hover:border-[#e7b84b]/30">{issue.label}</button>)}</div></div>}
-      <div className="mt-5 border-t border-white/10 pt-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">Action readiness</p><span className="text-xs text-white/30">{data.actionReadiness.length} actions evaluated</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{data.actionReadiness.slice(0, 8).map((action) => <button key={action.actionId} onClick={() => onSelectAction?.(action.actionId)} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/10 px-3 py-2 text-left hover:border-[#e7b84b]/30"><span className="min-w-0 truncate text-sm text-white/65">{action.title}</span><span className="shrink-0 text-[11px] uppercase tracking-wide text-white/35">{readinessReason(action.reason)}</span></button>)}</div></div>
+      <div className="mt-5 border-t border-white/10 pt-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">Action readiness</p><span className="text-xs text-white/30">{data.actionReadiness.length} actions evaluated</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{data.actionReadiness.slice(0, 8).map((action) => <div key={action.actionId} className="rounded-lg border border-white/10 bg-black/10 px-3 py-2"><button onClick={() => onSelectAction?.(action.actionId)} className="flex w-full items-center justify-between gap-3 text-left hover:text-white"><span className="min-w-0 truncate text-sm text-white/65">{action.title}</span><span className="shrink-0 text-[11px] uppercase tracking-wide text-white/35">{readinessReason(action.reason)}</span></button>{action.dependencyDetails.length > 0 && <div className="mt-2 border-t border-white/5 pt-2"><p className="text-[10px] uppercase tracking-[0.16em] text-white/25">Waiting on</p><div className="mt-1 grid gap-1">{action.dependencyDetails.map((dependency) => <button key={dependency.actionId} onClick={() => onSelectAction?.(dependency.actionId)} className="flex w-full items-center justify-between gap-2 text-left text-xs text-white/45 hover:text-white/70"><span className="min-w-0 truncate">{dependency.title}</span><span className={`shrink-0 ${dependency.resolved ? "text-emerald-300/60" : "text-[#e7b84b]/70"}`}>{dependencyState(dependency.state)}</span></button>)}</div></div>}</div>)}</div></div>
     </section>
 
     <section className="mt-6 rounded-2xl border border-[#e7b84b]/20 bg-gradient-to-br from-[#171207] to-[#0b0b0b] p-5">
