@@ -22,7 +22,18 @@ export async function GET() {
       evidenceClipCounts[clip.successor_action_id] = (evidenceClipCounts[clip.successor_action_id] ?? 0) + 1;
     }
 
-    return NextResponse.json({ ...handoff, evidenceClipCounts });
+    const actionReadiness = handoff.actionReadiness.map((readiness) => {
+      const clipEvidence = evidenceClipCounts[readiness.actionId] ?? 0;
+      const evidenceConfirmed = readiness.evidenceConfirmed || clipEvidence > 0;
+      return {
+        ...readiness,
+        evidenceConfirmed,
+        ready: readiness.ready || (readiness.evidenceRequired && evidenceConfirmed && readiness.unresolvedDependencies.length === 0),
+        evidenceClipCount: clipEvidence,
+      };
+    });
+
+    return NextResponse.json({ ...handoff, actionReadiness, evidenceClipCounts });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load successor handoff." }, { status: 500 });
   }
