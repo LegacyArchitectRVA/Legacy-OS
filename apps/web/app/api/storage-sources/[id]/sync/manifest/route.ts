@@ -7,7 +7,6 @@ const MAX_TEXT_LENGTH = 8192;
 const MAX_METADATA_BYTES = 16 * 1024;
 const SHA256 = /^[a-f0-9]{64}$/i;
 
-const FILE_SELECT = "id,workspace_id,storage_source_id,external_id,path,name,mime_type,size_bytes,content_hash,modified_at,metadata,indexed_at,created_at,updated_at";
 const SYNC_SELECT = "id,workspace_id,storage_source_id,status,started_at,completed_at,discovered_count,indexed_count,failed_count,error_code,created_at";
 
 type RouteContext = { params: Promise<{ id: string }> };
