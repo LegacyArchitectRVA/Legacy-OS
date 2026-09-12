@@ -3,7 +3,7 @@ import type { SuccessorAction } from "./successor-action-types";
 
 export interface HandoffBlocker {
   action: SuccessorAction;
-  reason: "dependency" | "evidence" | "blocked";
+  reason: "dependency" | "evidence" | "blocked" | "completion_invalid";
   dependencies: SuccessorAction[];
 }
 
@@ -22,6 +22,14 @@ export function buildSuccessorHandoffReport(handoff: SuccessorHandoff, actions: 
   for (const action of actions) {
     const readiness = readinessById.get(action.id);
     if (!readiness || readiness.reason === "completed" || readiness.ready) continue;
+
+    if (readiness.reason === "completion_invalid") {
+      const dependencies = readiness.unresolvedDependencies
+        .map((id) => byId.get(id))
+        .filter((value): value is SuccessorAction => Boolean(value));
+      blockers.push({ action, reason: "completion_invalid", dependencies });
+      continue;
+    }
 
     if (readiness.reason === "explicitly_blocked") {
       blockers.push({ action, reason: "blocked", dependencies: [] });
