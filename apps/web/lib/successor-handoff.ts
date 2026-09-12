@@ -17,7 +17,7 @@ export interface SuccessorActionReadiness {
   dependencyDetails: SuccessorDependencyReadiness[];
   evidenceRequired: boolean;
   evidenceConfirmed: boolean;
-  reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed";
+  reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed" | "completion_invalid";
 }
 
 export interface SuccessorNextAction {
@@ -33,6 +33,7 @@ export interface SuccessorHandoff {
   blockedActions: SuccessorAction[];
   inProgressActions: SuccessorAction[];
   completedActions: SuccessorAction[];
+  invalidCompletedActions: SuccessorAction[];
   unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>;
   evidenceOutstanding: SuccessorAction[];
   actionReadiness: SuccessorActionReadiness[];
@@ -61,25 +62,29 @@ function downstreamCounts(actions: SuccessorAction[]): Map<string, number> {
 export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHandoff {
   const byId = new Map(actions.map((action) => [action.id, action]));
   const unresolvedDependencies = actions.flatMap((action) => action.dependencies.filter((id) => byId.get(id)?.state !== "complete").map((dependencyId) => ({ actionId: action.id, dependencyId })));
-  const evidenceOutstanding = actions.filter((action) => action.evidenceRequired && !action.evidenceConfirmed && action.state !== "complete");
-  const blockedActions = actions.filter((action) => action.state === "blocked");
-  const completedActions = actions.filter((action) => action.state === "complete");
-  const actionReadiness = actions.map((action) => {
+
+  const readinessInputs = actions.map((action) => {
     const dependencyDetails = action.dependencies.map((dependencyId): SuccessorDependencyReadiness => {
       const dependency = byId.get(dependencyId);
       const state: SuccessorDependencyReadiness["state"] = dependency?.state ?? "missing";
-      return {
-        actionId: dependencyId,
-        title: dependency?.title ?? "Missing action",
-        state,
-        resolved: state === "complete",
-      };
+      return { actionId: dependencyId, title: dependency?.title ?? "Missing action", state, resolved: state === "complete" };
     });
     const dependencies = dependencyDetails.filter((dependency) => !dependency.resolved).map((dependency) => dependency.actionId);
-    const evidenceConfirmed = Boolean(action.evidenceConfirmed) || action.state === "complete";
-    const ready = action.state === "open" && dependencies.length === 0 && (!action.evidenceRequired || evidenceConfirmed);
+    const evidenceConfirmed = Boolean(action.evidenceConfirmed);
+    const prerequisitesSatisfied = dependencies.length === 0 && (!action.evidenceRequired || evidenceConfirmed);
+    return { action, dependencyDetails, dependencies, evidenceConfirmed, prerequisitesSatisfied };
+  });
+
+  const invalidCompletedActions = readinessInputs.filter(({ action, prerequisitesSatisfied }) => action.state === "complete" && !prerequisitesSatisfied).map(({ action }) => action);
+  const invalidCompletedIds = new Set(invalidCompletedActions.map((action) => action.id));
+  const evidenceOutstanding = readinessInputs.filter(({ action, evidenceConfirmed }) => action.evidenceRequired && !evidenceConfirmed && action.state !== "complete").map(({ action }) => action);
+  const blockedActions = actions.filter((action) => action.state === "blocked");
+  const completedActions = actions.filter((action) => action.state === "complete" && !invalidCompletedIds.has(action.id));
+
+  const actionReadiness = readinessInputs.map(({ action, dependencyDetails, dependencies, evidenceConfirmed, prerequisitesSatisfied }) => {
+    const ready = action.state === "open" && prerequisitesSatisfied;
     const reason: SuccessorActionReadiness["reason"] = action.state === "complete"
-      ? "completed"
+      ? prerequisitesSatisfied ? "completed" : "completion_invalid"
       : action.state === "blocked"
         ? "explicitly_blocked"
         : dependencies.length > 0
@@ -107,12 +112,13 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
       : null;
 
   return {
-    ready: blockedActions.length === 0 && unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0,
+    ready: blockedActions.length === 0 && unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0 && invalidCompletedActions.length === 0,
     completionPercent: actions.length ? Math.round((completedActions.length / actions.length) * 100) : 0,
     openActions: actions.filter((action) => action.state === "open"),
     blockedActions,
     inProgressActions: actions.filter((action) => action.state === "in_progress"),
     completedActions,
+    invalidCompletedActions,
     unresolvedDependencies,
     evidenceOutstanding,
     actionReadiness,
