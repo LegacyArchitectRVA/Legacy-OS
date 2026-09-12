@@ -39,6 +39,10 @@ function createFakeSupabase(source: Row, device: Row | null) {
     },
     async rpc(name: string, args: Record<string, unknown>) {
       calls.push({ name, args });
+      if (name === "claim_legacy_os_sync_run") {
+        if (source.status !== "active") return { data: null, error: { code: "SYNC_NOT_ELIGIBLE" } };
+        return { data: runs[0], error: null };
+      }
       const complete = args.p_complete === true;
       return {
         data: { ...runs[0], status: complete ? "completed" : "running" },
@@ -111,9 +115,10 @@ assert.equal(result.batches, 2);
 assert.equal(result.files, 2);
 assert.equal(result.syncRun.status, "completed");
 assert.equal(enumerationCount, 2);
-assert.equal(fake.calls.length, 2);
-assert.equal(fake.calls[0]?.args.p_complete, false);
-assert.equal(fake.calls[1]?.args.p_complete, true);
+assert.equal(fake.calls.length, 3);
+assert.equal(fake.calls[0]?.name, "claim_legacy_os_sync_run");
+assert.equal(fake.calls[1]?.args.p_complete, false);
+assert.equal(fake.calls[2]?.args.p_complete, true);
 
 const failingFake = createFakeSupabase(source, device);
 await assert.rejects(
@@ -139,8 +144,10 @@ await assert.rejects(
     { id: "run-1", workspace_id: "workspace-1", storage_source_id: "source-1" },
     deps(revokedFake, () => connector),
   ),
-  /no longer active/,
+  /not eligible/,
 );
-assert.equal(revokedFake.calls.length, 0);
+assert.equal(revokedFake.calls.length, 1);
+assert.equal(revokedFake.calls[0]?.name, "claim_legacy_os_sync_run");
+assert.equal(revokedFake.updates.length, 0);
 
 console.log("storage-sync-orchestrator tests passed");
