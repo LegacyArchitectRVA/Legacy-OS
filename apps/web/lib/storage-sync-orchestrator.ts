@@ -1,5 +1,5 @@
-import type { StorageConnector, StorageConnectorContext, StorageSourceType } from "./storage-connectors";
-import { normalizeManifestBatch } from "./storage-connectors";
+import type { StorageConnector, StorageConnectorContext, StorageSourceType } from "./storage-connectors.ts";
+import { normalizeManifestBatch } from "./storage-connectors.ts";
 
 type SyncStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
 
