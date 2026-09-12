@@ -16,7 +16,7 @@ function createFakeSupabase(source: Row, device: Row | null) {
     from(table: string) {
       const filters: Record<string, string> = {};
       const query = {
-        select() { return query; },
+        select(_columns: string) { return query; },
         eq(column: string, value: string) { filters[column] = value; return query; },
         async maybeSingle() {
           if (table === "legacy_os_storage_sources") return { data: filters.id === source.id ? source : null, error: null };
@@ -63,13 +63,31 @@ const connector: StorageConnector = {
     enumerationCount += 1;
     if (!cursor) {
       return {
-        files: [{ externalId: "file-1", path: "docs/file.txt", name: "file.txt" }],
+        files: [{
+          externalId: "file-1",
+          path: "docs/file.txt",
+          name: "file.txt",
+          mimeType: "text/plain",
+          sizeBytes: 12,
+          contentHash: null,
+          modifiedAt: null,
+          metadata: {},
+        }],
         complete: false,
         nextCursor: "page-2",
       };
     }
     return {
-      files: [{ externalId: "file-2", path: "docs/second.txt", name: "second.txt" }],
+      files: [{
+        externalId: "file-2",
+        path: "docs/second.txt",
+        name: "second.txt",
+        mimeType: "text/plain",
+        sizeBytes: 14,
+        contentHash: null,
+        modifiedAt: null,
+        metadata: {},
+      }],
       complete: true,
       nextCursor: null,
     };
