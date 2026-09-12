@@ -27,19 +27,12 @@ alter policy "continuity pillars workspace access"
     )
   );
 
-alter policy "legacy_os_clips_owner_delete"
+-- legacy_os_clips originally used one consolidated FOR ALL policy. Harden
+-- that policy directly rather than assuming four separately named policies
+-- exist in every database created from the migration history.
+drop policy if exists "legacy clips owner access" on public.legacy_os_clips;
+create policy "legacy clips owner access"
   on public.legacy_os_clips
-  using (user_id = (select auth.uid()));
-
-alter policy "legacy_os_clips_owner_insert"
-  on public.legacy_os_clips
-  with check (user_id = (select auth.uid()));
-
-alter policy "legacy_os_clips_owner_select"
-  on public.legacy_os_clips
-  using (user_id = (select auth.uid()));
-
-alter policy "legacy_os_clips_owner_update"
-  on public.legacy_os_clips
+  for all
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
