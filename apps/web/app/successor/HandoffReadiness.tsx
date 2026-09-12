@@ -3,10 +3,19 @@
 import { useEffect, useState } from "react";
 import { HandoffReport } from "./HandoffReport";
 
-interface HandoffReadiness { ready: boolean; completionPercent: number; openActions: number; blockedActions: number; inProgressActions: number; completedActions: number; unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>; evidenceOutstanding: Array<{ id: string; title: string; domain: string }>; }
+interface HandoffActionReadiness { actionId: string; ready: boolean; unresolvedDependencies: string[]; evidenceRequired: boolean; evidenceConfirmed: boolean; reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed"; }
+interface HandoffReadiness { ready: boolean; completionPercent: number; openActions: number; blockedActions: number; inProgressActions: number; completedActions: number; unresolvedDependencies: Array<{ actionId: string; dependencyId: string }>; evidenceOutstanding: Array<{ id: string; title: string; domain: string }>; actionReadiness: HandoffActionReadiness[]; }
 interface Pillar { pillar_key: string; name: string; coverage_score: number; status: "needs_attention" | "in_progress" | "ready"; matched_memories?: number; }
 interface EngineAction { id: string; title: string; domain: string; reason: string; priority: "critical" | "important" | "routine"; }
 interface Intelligence { overallRisk: "critical" | "elevated" | "watch" | "low"; confidenceScore: number; freshnessScore: number; evidenceQualityScore: number; staleEvidenceCount: number; topRisks: Array<{ pillarKey: string; level: string; score: number; reason: string; nextAction: string }>; nextBestAction: string | null; }
+
+const readinessReason = (reason: HandoffActionReadiness["reason"]): string => ({
+  ready: "Ready to start",
+  explicitly_blocked: "Explicitly blocked",
+  dependency_blocked: "Waiting on another action",
+  evidence_required: "Evidence required",
+  completed: "Completed",
+}[reason]);
 
 export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionId: string) => void }) {
   const [data, setData] = useState<HandoffReadiness | null>(null);
@@ -35,13 +44,15 @@ export function HandoffReadiness({ onSelectAction }: { onSelectAction?: (actionI
 
   const dependencyIssues = data.unresolvedDependencies.map((issue) => ({ key: `dependency:${issue.actionId}:${issue.dependencyId}`, actionId: issue.actionId, label: `Waiting on ${issue.dependencyId}` }));
   const evidenceIssues = data.evidenceOutstanding.map((action) => ({ key: `evidence:${action.id}`, actionId: action.id, label: `Evidence needed: ${action.title}` }));
-  const issues = [...dependencyIssues, ...evidenceIssues];
+  const blockedIssues = data.actionReadiness.filter((action) => action.reason === "explicitly_blocked").map((action) => ({ key: `blocked:${action.actionId}`, actionId: action.actionId, label: "Explicitly blocked: action must be unblocked" }));
+  const issues = [...blockedIssues, ...dependencyIssues, ...evidenceIssues];
   const riskLabel = intelligence?.overallRisk === "critical" ? "Critical continuity risk" : intelligence?.overallRisk === "elevated" ? "Elevated continuity risk" : intelligence?.overallRisk === "watch" ? "Continuity watch" : "Low continuity risk";
 
   return <>
     <section className={`rounded-2xl border p-5 ${data.ready ? "border-emerald-400/25 bg-emerald-400/[0.04]" : "border-[#e7b84b]/25 bg-[#e7b84b]/[0.04]"}`}>
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Handoff Readiness</p><h2 className="mt-1 text-xl font-semibold">{data.ready ? "Ready for a clean handoff" : "Handoff needs attention"}</h2></div><div className="text-right"><div className="text-3xl font-semibold">{data.completionPercent}%</div><div className="text-xs text-white/40">complete</div></div></div>
       {!data.ready && <div className="mt-5"><p className="text-sm text-white/55">Resolve these items before treating the workspace as successor-ready.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{issues.slice(0, 8).map((issue) => <button key={issue.key} onClick={() => onSelectAction?.(issue.actionId)} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-sm text-white/60 hover:border-[#e7b84b]/30">{issue.label}</button>)}</div></div>}
+      <div className="mt-5 border-t border-white/10 pt-4"><div className="flex items-center justify-between"><p className="text-sm font-medium">Action readiness</p><span className="text-xs text-white/30">{data.actionReadiness.length} actions evaluated</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{data.actionReadiness.slice(0, 8).map((action) => <button key={action.actionId} onClick={() => onSelectAction?.(action.actionId)} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/10 px-3 py-2 text-left hover:border-[#e7b84b]/30"><span className="min-w-0 truncate text-sm text-white/65">{action.actionId}</span><span className="shrink-0 text-[11px] uppercase tracking-wide text-white/35">{readinessReason(action.reason)}</span></button>)}</div></div>
     </section>
 
     <section className="mt-6 rounded-2xl border border-[#e7b84b]/20 bg-gradient-to-br from-[#171207] to-[#0b0b0b] p-5">
