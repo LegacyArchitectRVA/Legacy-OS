@@ -31,7 +31,7 @@ select ok(
 );
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', false);
 
 select lives_ok($$insert into public.legacy_os_devices (id,workspace_id,registered_by,name,platform,device_key_fingerprint,status) values ('00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000121','00000000-0000-0000-0000-000000000022','Member Laptop','windows','fp-member','active')$$, 'workspace member can register a device');
 select is((select count(*)::integer from public.legacy_os_devices), 1, 'workspace member sees the device');
@@ -43,20 +43,17 @@ select lives_ok($$update public.legacy_os_storage_sources set status='paused' wh
 select throws_ok($$delete from public.legacy_os_devices where id='00000000-0000-0000-0000-000000000201'$$, '42501', null, 'client cannot delete a device; revocation preserves lifecycle history');
 select throws_ok($$delete from public.legacy_os_storage_sources where id='00000000-0000-0000-0000-000000000301'$$, '42501', null, 'client cannot delete a storage source; revocation preserves lifecycle history');
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', false);
 select lives_ok($$update public.legacy_os_devices set name='Renamed by workspace owner' where id='00000000-0000-0000-0000-000000000201'$$, 'another workspace member can manage an existing device');
 select lives_ok($$update public.legacy_os_storage_sources set name='Renamed by workspace owner' where id='00000000-0000-0000-0000-000000000301'$$, 'another workspace member can manage an existing source');
 select throws_ok($$update public.legacy_os_devices set registered_by='00000000-0000-0000-0000-000000000021' where id='00000000-0000-0000-0000-000000000201'$$, 'P0001', null, 'device creator identity cannot be changed');
 select throws_ok($$update public.legacy_os_storage_sources set created_by='00000000-0000-0000-0000-000000000021' where id='00000000-0000-0000-0000-000000000301'$$, 'P0001', null, 'storage source creator identity cannot be changed');
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', false);
 select throws_ok($$insert into public.legacy_os_devices (workspace_id,registered_by,name,platform,device_key_fingerprint) values ('00000000-0000-0000-0000-000000000121','00000000-0000-0000-0000-000000000021','Forged Device','windows','fp-forged-device')$$, '42501', null, 'workspace member cannot spoof another user as device creator');
 select throws_ok($$insert into public.legacy_os_storage_sources (workspace_id,device_id,created_by,name,source_type) values ('00000000-0000-0000-0000-000000000121','00000000-0000-0000-0000-000000000201','00000000-0000-0000-0000-000000000021','Owner-created','local_filesystem')$$, '42501', null, 'workspace member cannot spoof another user as source creator');
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000023', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000023', false);
 select is((select count(*)::integer from public.legacy_os_devices), 0, 'outsider cannot see another workspace devices');
 select is((select count(*)::integer from public.legacy_os_storage_sources), 0, 'outsider cannot see another workspace sources');
 select is((select count(*)::integer from public.legacy_os_files), 0, 'outsider cannot see another workspace files');
