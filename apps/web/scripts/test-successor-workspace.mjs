@@ -32,7 +32,7 @@ assert.throws(() => buildSuccessorDependencyGraph([
 const summary = summarizeSuccessorActions(actions);
 assert.deepEqual(summary, {
   total: 5,
-  ready: 2,
+  ready: 3,
   blocked: 0,
   inProgress: 1,
   complete: 1,
