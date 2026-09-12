@@ -1,7 +1,8 @@
--- Make the claim RPC return one JSON object so API callers receive a single
--- claimed run rather than an implicit PostgREST array, and explicitly reject
+-- Change the claim RPC to return one JSON object and explicitly reject
 -- a concurrent loser instead of silently returning no claimed run.
-create or replace function public.claim_legacy_os_sync_run(p_sync_run_id uuid)
+drop function if exists public.claim_legacy_os_sync_run(uuid);
+
+create function public.claim_legacy_os_sync_run(p_sync_run_id uuid)
 returns jsonb
 language plpgsql
 set search_path = ''
