@@ -65,13 +65,14 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
   const blockedActions = actions.filter((action) => action.state === "blocked");
   const completedActions = actions.filter((action) => action.state === "complete");
   const actionReadiness = actions.map((action) => {
-    const dependencyDetails = action.dependencies.map((dependencyId) => {
+    const dependencyDetails = action.dependencies.map((dependencyId): SuccessorDependencyReadiness => {
       const dependency = byId.get(dependencyId);
+      const state: SuccessorDependencyReadiness["state"] = dependency?.state ?? "missing";
       return {
         actionId: dependencyId,
         title: dependency?.title ?? "Missing action",
-        state: dependency?.state ?? "missing",
-        resolved: dependency?.state === "complete",
+        state,
+        resolved: state === "complete",
       };
     });
     const dependencies = dependencyDetails.filter((dependency) => !dependency.resolved).map((dependency) => dependency.actionId);
