@@ -6,6 +6,7 @@ export interface SuccessorActionReadiness {
   unresolvedDependencies: string[];
   evidenceRequired: boolean;
   evidenceConfirmed: boolean;
+  reason: "ready" | "explicitly_blocked" | "dependency_blocked" | "evidence_required" | "completed";
 }
 
 export interface SuccessorHandoff {
@@ -29,13 +30,17 @@ export function buildSuccessorHandoff(actions: SuccessorAction[]): SuccessorHand
   const actionReadiness = actions.map((action) => {
     const dependencies = action.dependencies.filter((id) => byId.get(id)?.state !== "complete");
     const evidenceConfirmed = Boolean(action.evidenceConfirmed) || action.state === "complete";
-    return {
-      actionId: action.id,
-      ready: action.state === "open" && dependencies.length === 0 && (!action.evidenceRequired || evidenceConfirmed),
-      unresolvedDependencies: dependencies,
-      evidenceRequired: action.evidenceRequired,
-      evidenceConfirmed,
-    };
+    const ready = action.state === "open" && dependencies.length === 0 && (!action.evidenceRequired || evidenceConfirmed);
+    const reason: SuccessorActionReadiness["reason"] = action.state === "complete"
+      ? "completed"
+      : action.state === "blocked"
+        ? "explicitly_blocked"
+        : dependencies.length > 0
+          ? "dependency_blocked"
+          : action.evidenceRequired && !evidenceConfirmed
+            ? "evidence_required"
+            : "ready";
+    return { actionId: action.id, ready, unresolvedDependencies: dependencies, evidenceRequired: action.evidenceRequired, evidenceConfirmed, reason };
   });
   return {
     ready: blockedActions.length === 0 && unresolvedDependencies.length === 0 && evidenceOutstanding.length === 0,
