@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { buildSuccessorHandoff } from "./successor-handoff";
+import { buildSuccessorHandoff } from "./successor-handoff.ts";
 import type { SuccessorAction } from "./successor-action-types";
 
 const baseAction: SuccessorAction = {
