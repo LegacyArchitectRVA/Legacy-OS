@@ -1,4 +1,5 @@
 import type { SuccessorAction } from "./successor-action-types";
+import { buildSuccessorHandoff } from "./successor-handoff";
 
 export interface SuccessorWorkspaceModel {
   actions: SuccessorAction[];
@@ -15,15 +16,16 @@ export interface SuccessorWorkspaceModel {
 }
 
 export function summarizeSuccessorActions(actions: SuccessorAction[]): SuccessorWorkspaceModel["summary"] {
+  const handoff = buildSuccessorHandoff(actions);
   const evidenceRequired = actions.filter((a) => a.evidenceRequired).length;
   const evidenceConfirmed = actions.filter((a) => a.evidenceRequired && a.evidenceConfirmed).length;
 
   return {
     total: actions.length,
-    ready: actions.filter((a) => a.state === "open").length,
-    blocked: actions.filter((a) => a.state === "blocked").length,
-    inProgress: actions.filter((a) => a.state === "in_progress").length,
-    complete: actions.filter((a) => a.state === "complete").length,
+    ready: handoff.actionReadiness.filter((item) => item.ready).length,
+    blocked: handoff.blockedActions.length + handoff.actionReadiness.filter((item) => item.reason === "completion_invalid").length,
+    inProgress: handoff.inProgressActions.length,
+    complete: handoff.completedActions.length,
     evidenceRequired,
     evidenceConfirmed,
     evidenceGaps: evidenceRequired - evidenceConfirmed,
