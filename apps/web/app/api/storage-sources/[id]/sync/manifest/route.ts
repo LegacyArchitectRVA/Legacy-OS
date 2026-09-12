@@ -6,7 +6,6 @@ const MAX_FILES_PER_BATCH = 500;
 const MAX_TEXT_LENGTH = 8192;
 const MAX_METADATA_BYTES = 16 * 1024;
 const SHA256 = /^[a-f0-9]{64}$/i;
-
 const SYNC_SELECT = "id,workspace_id,storage_source_id,status,started_at,completed_at,discovered_count,indexed_count,failed_count,error_code,created_at";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -25,7 +24,7 @@ type ManifestFile = {
 function response(body: unknown, status = 200) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "private, no-store" },
+    headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
   });
 }
 
@@ -58,6 +57,7 @@ function normalizeFile(value: unknown): ManifestFile | null {
   if (!externalId || externalId.length > 2048 || !name || name.length > 512) return null;
   if (path === undefined || mimeType === undefined || contentHash === undefined || modifiedAt === undefined) return null;
   if (contentHash !== null && !SHA256.test(contentHash)) return null;
+  if (modifiedAt !== null && Number.isNaN(Date.parse(modifiedAt))) return null;
   if (rawSize !== undefined && rawSize !== null && (typeof rawSize !== "number" || !Number.isSafeInteger(rawSize) || rawSize < 0)) return null;
   if (metadata !== undefined && !isRecord(metadata)) return null;
   if (metadata && Buffer.byteLength(JSON.stringify(metadata), "utf8") > MAX_METADATA_BYTES) return null;
@@ -75,15 +75,16 @@ function normalizeFile(value: unknown): ManifestFile | null {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const user = await getAuthenticatedUser();
-  if (!user) return response({ error: "Authentication is required." }, 401);
+  if (!await getAuthenticatedUser()) return response({ error: "Authentication is required." }, 401);
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > MAX_BODY_BYTES) return badRequest("Manifest payload is too large.");
 
   let body: unknown;
   try {
-    body = await request.json();
+    const text = await request.text();
+    if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return badRequest("Manifest payload is too large.");
+    body = JSON.parse(text);
   } catch {
     return badRequest("Invalid JSON body.");
   }
@@ -94,7 +95,6 @@ export async function POST(request: Request, { params }: RouteContext) {
   const syncRunId = typeof body.sync_run_id === "string" ? body.sync_run_id.trim() : "";
   const complete = body.complete === true;
   const rawFiles = body.files;
-
   if (!sourceId || !syncRunId || !Array.isArray(rawFiles)) return badRequest("source id, sync_run_id, and files are required.");
   if (rawFiles.length > MAX_FILES_PER_BATCH) return badRequest("Too many files in one manifest batch.");
 
@@ -110,7 +110,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     .select("id,workspace_id,status,device_id")
     .eq("id", sourceId)
     .maybeSingle();
-
   if (sourceError) return response({ error: "Unable to resolve the storage source." }, 500);
   if (!source) return response({ error: "Storage source not found." }, 404);
   if (source.status !== "active") return response({ error: "Storage source is not active." }, 409);
@@ -133,7 +132,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     .eq("storage_source_id", sourceId)
     .eq("workspace_id", source.workspace_id)
     .maybeSingle();
-
   if (syncError) return response({ error: "Unable to resolve the synchronization run." }, 500);
   if (!syncRun) return response({ error: "Synchronization run not found." }, 404);
   if (!["queued", "running"].includes(syncRun.status)) return response({ error: "Synchronization run is no longer writable." }, 409);
@@ -159,36 +157,23 @@ export async function POST(request: Request, { params }: RouteContext) {
       metadata: file.metadata,
       indexed_at: new Date().toISOString(),
     }));
-
     const { error: upsertError } = await supabase
       .from("legacy_os_files")
       .upsert(rows, { onConflict: "storage_source_id,external_id" });
-
     if (upsertError) {
-      await supabase
-        .from("legacy_os_sync_runs")
-        .update({ status: "failed", completed_at: new Date().toISOString(), error_code: "FILE_INDEX_FAILED" })
-        .eq("id", syncRunId);
+      await supabase.from("legacy_os_sync_runs").update({ status: "failed", completed_at: new Date().toISOString(), error_code: "FILE_INDEX_FAILED" }).eq("id", syncRunId);
       return response({ error: "Unable to index the manifest batch." }, upsertError.code === "42501" ? 403 : 500);
     }
   }
 
-  const discoveredCount = syncRun.discovered_count + normalizedFiles.length;
-  const indexedCount = syncRun.indexed_count + normalizedFiles.length;
-  const nextStatus = complete ? "completed" : "running";
-  const { data: updatedRun, error: updateError } = await supabase
-    .from("legacy_os_sync_runs")
-    .update({
-      status: nextStatus,
-      discovered_count: discoveredCount,
-      indexed_count: indexedCount,
-      ...(complete ? { completed_at: new Date().toISOString() } : {}),
-    })
-    .eq("id", syncRunId)
-    .select(SYNC_SELECT)
-    .single();
-
-  if (updateError) return response({ error: "Unable to update synchronization status." }, 500);
+  const { data: advancedRuns, error: advanceError } = await supabase.rpc("advance_legacy_os_sync_run", {
+    p_sync_run_id: syncRunId,
+    p_file_count: normalizedFiles.length,
+    p_complete: complete,
+  });
+  if (advanceError) return response({ error: "Unable to update synchronization progress." }, 500);
+  const updatedRun = Array.isArray(advancedRuns) ? advancedRuns[0] : advancedRuns;
+  if (!updatedRun) return response({ error: "Synchronization run is no longer writable." }, 409);
 
   if (complete) {
     const { error: sourceUpdateError } = await supabase
