@@ -24,6 +24,11 @@ export function buildSuccessorHandoffReport(handoff: SuccessorHandoff, actions: 
     else if (action.evidenceRequired && !action.evidenceConfirmed) blockers.push({ action, reason: "evidence", dependencies: [] });
     else if (action.state === "blocked") blockers.push({ action, reason: "blocked", dependencies: [] });
   }
-  const nextActions = actions.filter((action) => action.state === "in_progress" || (action.state === "open" && action.dependencies.every((id) => byId.get(id)?.state === "complete"))).slice(0, 5);
+  const blockedIds = new Set(blockers.map((blocker) => blocker.action.id));
+  const nextActions = actions.filter((action) => {
+    if (blockedIds.has(action.id) || action.state === "complete") return false;
+    if (action.state === "in_progress") return true;
+    return action.state === "open" && action.dependencies.every((id) => byId.get(id)?.state === "complete") && (!action.evidenceRequired || action.evidenceConfirmed);
+  }).slice(0, 5);
   return { ready: handoff.ready, completionPercent: handoff.completionPercent, blockers, nextActions };
 }
