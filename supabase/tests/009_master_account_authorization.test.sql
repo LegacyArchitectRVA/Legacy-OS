@@ -65,15 +65,20 @@ select lives_ok($$delete from public.knowledge_documents where workspace_id='320
 -- Master administration must not transfer ownership accidentally.
 select lives_ok($$update public.workspaces set name='Master Renamed' where id='32000000-0000-0000-0000-000000000001'$$, 'master can administer workspace metadata');
 select is((select owner_id from public.workspaces where id='32000000-0000-0000-0000-000000000001'), '00000000-0000-0000-0000-000000000033'::uuid, 'master cannot change ownership through an ordinary name update');
-select throws_ok($$update public.workspaces set owner_id='00000000-0000-0000-0000-000000000031' where id='32000000-0000-0000-0000-000000000001'$$, '42501', null, 'master cannot transfer ownership through workspace RLS');
+select throws_ok($$update public.workspaces set owner_id='00000000-0000-0000-0000-000000000031' where id='32000000-0000-0000-0000-000000000001'$$, 'P0001', 'Workspace ownership transfer requires the dedicated ownership workflow', 'master cannot transfer ownership through ordinary workspace CRUD');
 
--- Removing the master binding immediately removes global access.
-delete from public.legacy_os_master_accounts where user_id='00000000-0000-0000-0000-000000000031';
-select is(private.is_legacy_os_master(), false, 'inactive master binding removes master access immediately');
-select is((select count(*)::integer from public.workspaces), 0, 'removed master can no longer read workspaces');
+-- The protected master binding cannot be deleted through ordinary client privileges.
+select throws_ok($$delete from public.legacy_os_master_accounts where user_id='00000000-0000-0000-0000-000000000031'$$, '42501', null, 'master cannot directly delete its protected binding');
+select is(private.is_legacy_os_master(), true, 'protected master binding remains active');
 
 -- A non-master user cannot write the protected master table directly.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000032', true);
 select throws_ok($$insert into public.legacy_os_master_accounts (user_id) values ('00000000-0000-0000-0000-000000000032')$$, '42501', null, 'ordinary user cannot insert master binding');
+select is(private.is_legacy_os_master(), false, 'ordinary user remains non-master');
+select is((select count(*)::integer from public.workspaces), 1, 'ordinary user remains isolated to owned workspace');
+
+-- Anonymous callers cannot bootstrap or inspect protected master state.
+set local role anon;
+select throws_ok($$select public.bootstrap_legacy_os_master_account()$$, '42501', null, 'anonymous caller cannot bootstrap master access');
 
 rollback;
