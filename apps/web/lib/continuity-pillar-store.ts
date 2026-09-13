@@ -2,6 +2,7 @@ import { buildContinuityActions } from "./continuity-actions";
 import { buildContinuityPillarCoverage, buildContinuitySnapshot } from "./continuity";
 import { getRecallUserId, listRecallMemories } from "./recall-store";
 import { getSupabaseServerClient } from "./supabase/server";
+import { getMasterAccess } from "./master-access";
 
 export const CONTINUITY_PILLARS = [
   ["digital_life", "Digital Life"],
@@ -15,6 +16,8 @@ export const CONTINUITY_PILLARS = [
 
 type ContinuityPillarKey = (typeof CONTINUITY_PILLARS)[number][0];
 
+type Workspace = { id: string; name: string; owner_id: string };
+
 function isContinuityPillarKey(value: string): value is ContinuityPillarKey {
   return CONTINUITY_PILLARS.some(([key]) => key === value);
 }
@@ -25,27 +28,54 @@ async function getOwnedWorkspace(
 ) {
   const { data, error } = await supabase
     .from("workspaces")
-    .select("id")
+    .select("id,name,owner_id")
     .eq("owner_id", userId)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
   if (error) throw new Error("Unable to resolve the current workspace.");
-  return data;
+  return data as Workspace | null;
+}
+
+async function getAccessibleWorkspaces(
+  supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
+) {
+  const { data, error } = await supabase
+    .from("workspaces")
+    .select("id,name,owner_id")
+    .order("created_at", { ascending: true });
+  if (error) throw new Error("Unable to resolve accessible workspaces.");
+  return (data ?? []) as Workspace[];
+}
+
+async function getWorkspaceContext(
+  supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
+  userId: string,
+) {
+  const master = await getMasterAccess();
+  const workspaces = master.isMaster
+    ? await getAccessibleWorkspaces(supabase)
+    : [];
+  const workspace = master.isMaster
+    ? workspaces[0] ?? null
+    : await getOwnedWorkspace(supabase, userId);
+  return { ...master, workspaces, workspace };
 }
 
 export async function getContinuityEngineState() {
   const supabase = await getSupabaseServerClient();
   const userId = await getRecallUserId();
   if (!userId) throw new Error("Authentication is required for continuity readiness.");
-  if (!supabase) return { workspaceId: null, pillars: [], readiness: null, actions: [], snapshot: null };
+  if (!supabase) return { workspaceId: null, isMaster: false, workspaces: [], pillars: [], readiness: null, actions: [], snapshot: null };
 
-  const workspace = await getOwnedWorkspace(supabase, userId);
-  if (!workspace) return { workspaceId: null, pillars: [], readiness: null, actions: [], snapshot: null };
+  const context = await getWorkspaceContext(supabase, userId);
+  if (!context.workspace) {
+    return { workspaceId: null, isMaster: context.isMaster, workspaces: context.workspaces, pillars: [], readiness: null, actions: [], snapshot: null };
+  }
 
   const [{ data: pillars, error: pillarError }, { data: readiness, error: readinessError }, memories] = await Promise.all([
-    supabase.from("continuity_pillars").select("id,workspace_id,pillar_key,name,description,weight,coverage_score,status,updated_at").eq("workspace_id", workspace.id).order("created_at", { ascending: true }),
-    supabase.from("continuity_readiness").select("workspace_id,overall_score,pillar_count,ready_count,in_progress_count,needs_attention_count,last_updated").eq("workspace_id", workspace.id).maybeSingle(),
+    supabase.from("continuity_pillars").select("id,workspace_id,pillar_key,name,description,weight,coverage_score,status,updated_at").eq("workspace_id", context.workspace.id).order("created_at", { ascending: true }),
+    supabase.from("continuity_readiness").select("workspace_id,overall_score,pillar_count,ready_count,in_progress_count,needs_attention_count,last_updated").eq("workspace_id", context.workspace.id).maybeSingle(),
     listRecallMemories(undefined, userId),
   ]);
   if (pillarError) throw new Error("Unable to retrieve continuity pillars.");
@@ -60,7 +90,7 @@ export async function getContinuityEngineState() {
   });
   const actions = buildContinuityActions(snapshot.gaps);
   const computedReadiness = {
-    workspace_id: workspace.id,
+    workspace_id: context.workspace.id,
     overall_score: computedPillars.length ? Math.round(computedPillars.reduce((sum, pillar) => sum + pillar.coverageScore, 0) / computedPillars.length) : 0,
     pillar_count: computedPillars.length,
     ready_count: computedPillars.filter((pillar) => pillar.status === "ready").length,
@@ -69,7 +99,15 @@ export async function getContinuityEngineState() {
     last_updated: readiness?.last_updated ?? null,
   };
 
-  return { workspaceId: workspace.id, pillars: mergedPillars, readiness: computedReadiness, actions, snapshot };
+  return {
+    workspaceId: context.workspace.id,
+    isMaster: context.isMaster,
+    workspaces: context.workspaces,
+    pillars: mergedPillars,
+    readiness: computedReadiness,
+    actions,
+    snapshot,
+  };
 }
 
 export async function refreshContinuityPillars() {
