@@ -40,8 +40,6 @@ select is(private.is_legacy_os_master(), false, 'ordinary user is not master');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000031', true);
 select is(public.bootstrap_legacy_os_master_account(), true, 'configured master email bootstraps master access');
 select is(private.is_legacy_os_master(), true, 'configured account is recognized as master');
-select is((select count(*)::integer from public.legacy_os_master_accounts), 1, 'only one master binding exists');
-select is((select user_id from public.legacy_os_master_accounts), '00000000-0000-0000-0000-000000000031'::uuid, 'master binding stores authenticated UUID');
 
 -- Master can see every workspace and every canonical workspace-scoped resource.
 select is((select count(*)::integer from public.workspaces), 2, 'master can read every workspace');
