@@ -15,7 +15,6 @@ export const CONTINUITY_PILLARS = [
 ] as const;
 
 type ContinuityPillarKey = (typeof CONTINUITY_PILLARS)[number][0];
-
 type Workspace = { id: string; name: string; owner_id: string };
 
 function isContinuityPillarKey(value: string): value is ContinuityPillarKey {
@@ -51,24 +50,23 @@ async function getAccessibleWorkspaces(
 async function getWorkspaceContext(
   supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
   userId: string,
+  requestedWorkspaceId: string | null,
 ) {
   const master = await getMasterAccess();
-  const workspaces = master.isMaster
-    ? await getAccessibleWorkspaces(supabase)
-    : [];
+  const workspaces = master.isMaster ? await getAccessibleWorkspaces(supabase) : [];
   const workspace = master.isMaster
-    ? workspaces[0] ?? null
+    ? workspaces.find((candidate) => candidate.id === requestedWorkspaceId) ?? workspaces[0] ?? null
     : await getOwnedWorkspace(supabase, userId);
   return { ...master, workspaces, workspace };
 }
 
-export async function getContinuityEngineState() {
+export async function getContinuityEngineState(requestedWorkspaceId: string | null = null) {
   const supabase = await getSupabaseServerClient();
   const userId = await getRecallUserId();
   if (!userId) throw new Error("Authentication is required for continuity readiness.");
   if (!supabase) return { workspaceId: null, isMaster: false, workspaces: [], pillars: [], readiness: null, actions: [], snapshot: null };
 
-  const context = await getWorkspaceContext(supabase, userId);
+  const context = await getWorkspaceContext(supabase, userId, requestedWorkspaceId);
   if (!context.workspace) {
     return { workspaceId: null, isMaster: context.isMaster, workspaces: context.workspaces, pillars: [], readiness: null, actions: [], snapshot: null };
   }
@@ -99,15 +97,7 @@ export async function getContinuityEngineState() {
     last_updated: readiness?.last_updated ?? null,
   };
 
-  return {
-    workspaceId: context.workspace.id,
-    isMaster: context.isMaster,
-    workspaces: context.workspaces,
-    pillars: mergedPillars,
-    readiness: computedReadiness,
-    actions,
-    snapshot,
-  };
+  return { workspaceId: context.workspace.id, isMaster: context.isMaster, workspaces: context.workspaces, pillars: mergedPillars, readiness: computedReadiness, actions, snapshot };
 }
 
 export async function refreshContinuityPillars() {
@@ -121,14 +111,10 @@ export async function refreshContinuityPillars() {
   const computed = buildContinuityPillarCoverage(memories);
   const now = new Date().toISOString();
   for (const pillar of computed) {
-    const { error } = await supabase
-      .from("continuity_pillars")
-      .update({ coverage_score: pillar.coverageScore, status: pillar.status, updated_at: now })
-      .eq("workspace_id", workspace.id)
-      .eq("pillar_key", pillar.pillarKey);
+    const { error } = await supabase.from("continuity_pillars").update({ coverage_score: pillar.coverageScore, status: pillar.status, updated_at: now }).eq("workspace_id", workspace.id).eq("pillar_key", pillar.pillarKey);
     if (error) throw new Error("Unable to refresh continuity pillars.");
   }
-  return getContinuityEngineState();
+  return getContinuityEngineState(workspace.id);
 }
 
 export async function updateContinuityPillar(pillarKey: string, coverageScore: number, status: string) {
@@ -141,13 +127,7 @@ export async function updateContinuityPillar(pillarKey: string, coverageScore: n
 
   const workspace = await getOwnedWorkspace(supabase, userId);
   if (!workspace) throw new Error("Workspace not found.");
-  const { data, error } = await supabase
-    .from("continuity_pillars")
-    .update({ coverage_score: coverageScore, status, updated_at: new Date().toISOString() })
-    .eq("workspace_id", workspace.id)
-    .eq("pillar_key", pillarKey)
-    .select("*")
-    .maybeSingle();
+  const { data, error } = await supabase.from("continuity_pillars").update({ coverage_score: coverageScore, status, updated_at: new Date().toISOString() }).eq("workspace_id", workspace.id).eq("pillar_key", pillarKey).select("*").maybeSingle();
   if (error) throw new Error("Unable to update continuity pillar.");
   if (!data) throw new Error("Continuity pillar not found.");
   return data;
