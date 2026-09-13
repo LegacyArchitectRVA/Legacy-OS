@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(28);
 
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data)
 values
@@ -35,10 +35,12 @@ set local role authenticated;
 -- The exact bootstrap identity can activate itself, but another account cannot.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000032', true);
 select is(public.bootstrap_legacy_os_master_account(), false, 'non-master email cannot bootstrap master access');
+select is(public.get_legacy_os_master_status(), false, 'non-master status is false');
 select is(private.is_legacy_os_master(), false, 'ordinary user is not master');
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000031', true);
 select is(public.bootstrap_legacy_os_master_account(), true, 'configured master email bootstraps master access');
+select is(public.get_legacy_os_master_status(), true, 'authenticated status function reports master access');
 select is(private.is_legacy_os_master(), true, 'configured account is recognized as master');
 
 -- Master can see every workspace and every canonical workspace-scoped resource.
@@ -73,10 +75,13 @@ select is(private.is_legacy_os_master(), true, 'protected master binding remains
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000032', true);
 select throws_ok($$insert into public.legacy_os_master_accounts (user_id) values ('00000000-0000-0000-0000-000000000032')$$, '42501', null, 'ordinary user cannot insert master binding');
 select is(private.is_legacy_os_master(), false, 'ordinary user remains non-master');
+select is(public.get_legacy_os_master_status(), false, 'ordinary user status remains false');
 select is((select count(*)::integer from public.workspaces), 1, 'ordinary user remains isolated to owned workspace');
 
 -- Anonymous callers cannot bootstrap or inspect protected master state.
 set local role anon;
 select throws_ok($$select public.bootstrap_legacy_os_master_account()$$, '42501', null, 'anonymous caller cannot bootstrap master access');
+select throws_ok($$select public.get_legacy_os_master_status()$$, '42501', null, 'anonymous caller cannot inspect master status');
 
+select * from finish();
 rollback;
