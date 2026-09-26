@@ -1,65 +1,60 @@
+import Link from "next/link";
 import AccessibilitySettings from "./components/AccessibilitySettings";
-import ElaraGuide3D from "./components/ElaraGuide3D";
-import HolographicRecallViewer from "./components/HolographicRecallViewer";
-import MemoryRecreation from "./components/MemoryRecreation";
-import ReconstructionReadiness from "./components/ReconstructionReadiness";
-import RecallMemoryComposer from "./components/RecallMemoryComposer";
 import EvidenceVault from "./components/EvidenceVault";
-import SignLanguagePanel from "./components/SignLanguagePanel";
-import SignVideoVoicePlayer from "./components/SignVideoVoicePlayer";
-import VisualRecallPanel from "./components/VisualRecallPanel";
 import LegacyContextSelector from "./components/LegacyContextSelector";
-import SevenPillarsLifeMap3D from "./components/SevenPillarsLifeMap3D";
-import type { PersonReconstructionProfile } from "./lib/person-reconstruction";
 
 const modules = [
-  { name: "Knowledge Brain", description: "Your searchable memory for people, places, documents, decisions, and know-how." },
-  { name: "Decision Advisor", description: "Pressure-test important decisions and surface risks, assumptions, and missing information." },
-  { name: "Continuity Vault", description: "Keep critical information organized for the people who may need it." },
-  { name: "Legacy Recall", description: "Preserve stories, memories, relationships, voice, images, and video with evidence and provenance." },
-  { name: "Legacy Score", description: "See how prepared your life, family, or business is for interruption and transition." },
+  { name: "Continuity Readiness", description: "See your seven pillars at a glance and know exactly what's covered, in progress, or still open." },
+  { name: "Legacy Recall", description: "Preserve stories, memories, and relationships with the evidence and provenance attached, not just the memory itself." },
+  { name: "Successor Mode", description: "Turn your continuity record into a clear set of actions, gaps, and evidence someone else can actually act on." },
+  { name: "Clip Library", description: "Keep private voice and video clips organized alongside the rest of your record." },
 ];
-
-const demoReconstructionProfile: PersonReconstructionProfile = {
-  id: "demo-dad",
-  displayName: "Dad",
-  permission: "approved",
-  identityEvidence: ["preserved family photographs"],
-  voiceEvidence: ["family audio recordings"],
-  personalityEvidence: ["preserved conversations and stories"],
-  memorySourceIds: ["memory-fishing", "photo-fishing"],
-  sceneIds: ["first-fishing-trip"],
-};
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-white sm:p-10">
       <div className="mx-auto max-w-7xl">
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">LegacyOS</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">Continuity for life, family, and business.</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-white/60">Preserve what matters, understand what is missing, and make the information people depend on usable when someone important is unavailable.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">Legacy OS</p>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">Order in your absence.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-white/60">Legacy OS is where your Life Manual actually lives. It helps you get what's in your head and your file cabinet into a record someone else can pick up and run with, whether that's a spouse, a kid, or whoever's stuck holding the keys.</p>
         </header>
 
         <section className="mt-8"><LegacyContextSelector /></section>
-        <section className="mt-10"><ElaraGuide3D activePillar="01" /></section>
-        <section className="mt-10"><SevenPillarsLifeMap3D /></section>
 
         <section aria-labelledby="modules-heading" className="mt-10">
-          <div className="flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Continuity system</p><h2 id="modules-heading" className="mt-1 text-2xl font-semibold">Your LegacyOS layers</h2></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/40">Foundation</span></div>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">{modules.map((module) => <article key={module.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"><h3 className="font-semibold text-white">{module.name}</h3><p className="mt-2 text-sm leading-6 text-white/50">{module.description}</p></article>)}</div>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">Continuity system</p>
+              <h2 id="modules-heading" className="mt-1 text-2xl font-semibold">What Legacy OS actually does</h2>
+            </div>
+            <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/40">Foundation</span>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {modules.map((module) => (
+              <article key={module.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <h3 className="font-semibold text-white">{module.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/50">{module.description}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section aria-labelledby="recall-heading" className="mt-10">
-          <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Primary human memory feature</p><h2 id="recall-heading" className="mt-1 text-2xl font-semibold">Legacy Recall · Immersive Memory Recreation</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-white/50">Preserve enough of a person's life to reconstruct meaningful moments through evidence, voice, identity, personality, scenes, and conversation.</p></div>
-          <ReconstructionReadiness profile={demoReconstructionProfile} />
-          <div className="mt-6"><MemoryRecreation personName="Dad" personId="demo-dad" question="Hey Dad, remember when we went fishing for the first time?" verifiedMemories={["Dad recorded this memory, preserving his own account of the first fishing trip."]} reconstructedResponse="This is an AI reconstruction from preserved evidence, not Dad's literal words." /></div>
-          <div className="mt-8 grid gap-8 lg:grid-cols-2"><VisualRecallPanel /><HolographicRecallViewer mediaKind="scene" /></div>
-          <div className="mt-8"><EvidenceVault context="personal" /></div>
-          <div className="mt-8 max-w-2xl"><RecallMemoryComposer context="personal" /></div>
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Get started</p>
+            <h2 id="recall-heading" className="mt-1 text-2xl font-semibold">Add your first piece of evidence</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/50">A memory, a document, a photo, whatever you've got. Attach the source and Legacy Recall keeps track of what's confirmed versus what's still a guess.</p>
+          </div>
+          <EvidenceVault context="personal" />
         </section>
 
-        <section className="mt-8 grid gap-8 lg:grid-cols-2"><AccessibilitySettings /><SignLanguagePanel /><SignVideoVoicePlayer videoUri="" /></section>
+        <section className="mt-8"><AccessibilitySettings /></section>
+
+        <section className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+          <p className="text-sm text-white/60">Already have an account?</p>
+          <Link href="/auth" className="mt-3 inline-block rounded-lg bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950">Sign in to your workspace</Link>
+        </section>
       </div>
     </main>
   );

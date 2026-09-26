@@ -49,17 +49,11 @@ Icons should be:
 
 ## Product Icons
 
-Business Brain:
-Knowledge archive + compass
-
-Executive Advisor:
-Strategy + shield
-
-Production Assistant:
-Workflow + precision clock
-
 Continuity Vault:
 Protected archive + key/shield
+
+Legacy Recall:
+Archive + compass
 
 Legacy Score:
 Readiness compass

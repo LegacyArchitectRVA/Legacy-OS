@@ -20,4 +20,4 @@ Business knowledge, user identity, and application secrets remain separated.
 - Role-based access
 - Encrypted document storage
 - Audit logs
-- Secure AI retrieval boundaries
+- AI requests treat stored memories and continuity state as untrusted data, never as instructions
