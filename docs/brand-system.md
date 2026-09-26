@@ -5,7 +5,7 @@
 LegacyOS is the operational continuity system behind the philosophy of "Order in Your Absence."
 
 The brand should feel like:
-- A trusted advisor
+- A private continuity office
 - A private executive office
 - A heritage institution
 - A premium continuity solution

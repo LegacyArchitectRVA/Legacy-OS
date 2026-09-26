@@ -6,7 +6,7 @@ export type SecureSystemCategory =
   | "calendar"
   | "video_meetings";
 
-export type SecureSystemRecommendation = {
+export type SecureSystemDefault = {
   category: SecureSystemCategory;
   provider: "proton";
   product: string;
@@ -16,7 +16,7 @@ export type SecureSystemRecommendation = {
   caveat: string;
 };
 
-const PROTON_RECOMMENDATIONS: Record<SecureSystemCategory, SecureSystemRecommendation> = {
+const PROTON_DEFAULTS: Record<SecureSystemCategory, SecureSystemDefault> = {
   email: {
     category: "email",
     provider: "proton",
@@ -73,12 +73,12 @@ const PROTON_RECOMMENDATIONS: Record<SecureSystemCategory, SecureSystemRecommend
   },
 };
 
-export function getDefaultSecureSystemRecommendation(
+export function getSecureSystemDefault(
   category: SecureSystemCategory,
-): SecureSystemRecommendation {
-  return PROTON_RECOMMENDATIONS[category];
+): SecureSystemDefault {
+  return PROTON_DEFAULTS[category];
 }
 
-export function listDefaultSecureSystemRecommendations(): readonly SecureSystemRecommendation[] {
-  return Object.values(PROTON_RECOMMENDATIONS);
+export function listSecureSystemDefaults(): readonly SecureSystemDefault[] {
+  return Object.values(PROTON_DEFAULTS);
 }
