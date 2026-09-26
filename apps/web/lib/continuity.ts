@@ -1,5 +1,5 @@
 export type ContinuityDomain = "personal" | "family" | "business" | "digital" | "financial" | "property" | "health" | "legal" | "wishes";
-export type ContinuityPillarKey = "digital_life" | "financial_assets" | "household_property" | "health_medical" | "vital_records" | "business_continuity" | "legacy_wishes";
+export type ContinuityPillarKey = "digital_life" | "emergency_successor_access" | "financial_assets" | "household_operations" | "vital_records" | "legacy_wishes" | "business_continuity";
 
 export interface ContinuityGap { domain: ContinuityDomain; severity: "critical" | "important" | "watch"; title: string; reason: string; }
 export interface ContinuitySnapshot { totalMemories: number; domains: ContinuityDomain[]; gaps: ContinuityGap[]; readiness: number; }
@@ -19,12 +19,12 @@ const DOMAIN_KEYWORDS: Record<ContinuityDomain, string[]> = {
 
 const PILLAR_KEYWORDS: Record<ContinuityPillarKey, string[]> = {
   digital_life: ["email", "password", "account", "digital", "domain", "device", "phone", "computer", "social"],
+  emergency_successor_access: ["emergency", "successor", "executor", "power of attorney", "beneficiary", "contact", "authorize", "authority", "next of kin", "access instructions"],
   financial_assets: ["bank", "investment", "insurance", "asset", "financial", "loan", "credit", "retirement", "mortgage"],
-  household_property: ["home", "house", "property", "vehicle", "utility", "maintenance", "vendor", "appliance", "alarm"],
-  health_medical: ["medical", "doctor", "health", "medication", "care", "hospital", "provider", "directive"],
+  household_operations: ["home", "house", "property", "vehicle", "utility", "maintenance", "vendor", "appliance", "alarm", "routine", "chore"],
   vital_records: ["birth", "marriage", "divorce", "death", "passport", "license", "identity", "military", "certificate", "record"],
-  business_continuity: ["business", "company", "client", "vendor", "employee", "payroll", "operations", "succession", "customer"],
   legacy_wishes: ["wish", "funeral", "burial", "cremation", "legacy", "message", "values", "memorial", "gift"],
+  business_continuity: ["business", "company", "client", "vendor", "employee", "payroll", "operations", "succession", "customer"],
 };
 
 export function buildContinuitySnapshot(memories: Array<{ context: string; title: string; narrative: string; provenanceComplete?: boolean; evidenceClass?: string }>): ContinuitySnapshot {

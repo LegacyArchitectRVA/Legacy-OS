@@ -5,12 +5,12 @@ import { getSupabaseServerClient } from "./supabase/server";
 
 export const CONTINUITY_PILLARS = [
   ["digital_life", "Digital Life"],
+  ["emergency_successor_access", "Emergency & Successor Access"],
   ["financial_assets", "Financial & Assets"],
-  ["household_property", "Household & Property"],
-  ["health_medical", "Health & Medical"],
+  ["household_operations", "Household Operations"],
   ["vital_records", "Vital Records"],
-  ["business_continuity", "Business Continuity"],
   ["legacy_wishes", "Legacy & Wishes"],
+  ["business_continuity", "Business Continuity"],
 ] as const;
 
 type ContinuityPillarKey = (typeof CONTINUITY_PILLARS)[number][0];

@@ -3,12 +3,12 @@ import { buildContinuityIntelligence } from "../lib/continuity-intelligence.ts";
 
 const pillars = [
   { pillarKey: "digital_life", coverageScore: 90, status: "ready", matchedMemories: 4 },
+  { pillarKey: "emergency_successor_access", coverageScore: 40, status: "needs_attention", matchedMemories: 1 },
   { pillarKey: "financial_assets", coverageScore: 35, status: "needs_attention", matchedMemories: 1 },
-  { pillarKey: "household_property", coverageScore: 0, status: "needs_attention", matchedMemories: 0 },
-  { pillarKey: "health_medical", coverageScore: 70, status: "in_progress", matchedMemories: 2 },
+  { pillarKey: "household_operations", coverageScore: 0, status: "needs_attention", matchedMemories: 0 },
   { pillarKey: "vital_records", coverageScore: 80, status: "ready", matchedMemories: 3 },
-  { pillarKey: "business_continuity", coverageScore: 55, status: "in_progress", matchedMemories: 2 },
   { pillarKey: "legacy_wishes", coverageScore: 45, status: "in_progress", matchedMemories: 1 },
+  { pillarKey: "business_continuity", coverageScore: 55, status: "in_progress", matchedMemories: 2 },
 ];
 
 const now = new Date("2026-09-11T00:00:00.000Z");
@@ -41,7 +41,7 @@ const intelligence = buildContinuityIntelligence(pillars, [
   },
 ], now);
 
-assert.equal(intelligence.topRisks[0].pillarKey, "household_property");
+assert.equal(intelligence.topRisks[0].pillarKey, "household_operations");
 assert.ok(intelligence.topRisks[0].score >= 75);
 assert.ok(intelligence.staleEvidenceCount >= 1);
 assert.ok(intelligence.freshnessScore < 100);

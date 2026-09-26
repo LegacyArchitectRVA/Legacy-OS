@@ -6,12 +6,12 @@ import { getRecallUserId, listRecallMemories } from "../../../../lib/recall-stor
 
 const PILLAR_KEYS = new Set<ContinuityPillarKey>([
   "digital_life",
+  "emergency_successor_access",
   "financial_assets",
-  "household_property",
-  "health_medical",
+  "household_operations",
   "vital_records",
-  "business_continuity",
   "legacy_wishes",
+  "business_continuity",
 ]);
 
 function toCoverage(pillars: Array<{ pillar_key: unknown; name?: unknown; coverage_score?: unknown; status?: unknown; matched_memories?: unknown }>): ContinuityPillarCoverage[] {
