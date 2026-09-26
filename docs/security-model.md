@@ -5,7 +5,7 @@
 LegacyOS follows a continuity-first security model.
 
 Core rules:
-- Store credentials separately from instructions.
+- Never store credentials.
 - Encrypt sensitive business data.
 - Use least-privilege access.
 - Maintain audit history.
