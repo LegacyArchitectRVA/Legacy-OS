@@ -9,6 +9,7 @@ type RecreationResult = {
   mode: Evidence;
   disclosure: string;
   evidence: Array<{ id: string; type: string; title: string; evidence: string }>;
+  context: Array<{ label: string; value: string }>;
 };
 
 export interface MemoryRecreationProps {
@@ -63,9 +64,17 @@ export default function MemoryRecreation({
 
       {result && (
         <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-white/35">{personName}</p>
-          <p className="mt-2 text-base leading-7 text-white/80">"{result.response}"</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-white/35">About {personName}</p>
+          <p className="mt-2 text-base leading-7 text-white/80">{result.response}</p>
           <p className="mt-3 text-xs leading-5 text-white/40">{result.disclosure}</p>
+          {result.context.length > 0 && (
+            <div className="mt-3 border-t border-white/10 pt-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/35">Real context</p>
+              <ul className="mt-2 space-y-1 text-sm text-white/60">
+                {result.context.map((fact) => <li key={fact.label}>{fact.label}: {fact.value}</li>)}
+              </ul>
+            </div>
+          )}
           {result.evidence.length > 0 && (
             <div className="mt-3 border-t border-white/10 pt-3">
               <p className="text-xs uppercase tracking-[0.18em] text-white/35">Evidence used</p>

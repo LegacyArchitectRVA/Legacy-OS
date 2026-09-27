@@ -14,6 +14,8 @@ A loved one asks a question about a memory. Legacy Recall looks at the evidence 
 
 If there isn't enough evidence to answer well, Legacy Recall says so rather than guessing. It surfaces what it does have instead of inventing the rest.
 
+When a memory has a real place and date attached, Legacy Recall can also pull in real historical context, like the weather that day, to help complete the picture. That context is always disclosed as context, not as something the person recorded, and it's only ever real, looked-up fact, never an invented detail.
+
 ## Memory integrity
 
 Every answer distinguishes between:

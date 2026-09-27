@@ -3,6 +3,25 @@
 import { FormEvent, useEffect, useState } from "react";
 import OrientationTour from "../components/OrientationTour";
 import { getSupabaseBrowserClient } from "../../lib/supabase-browser";
+import { isLegacyOsVoiceMode, type LegacyOsVoiceMode } from "../../lib/legacyos-voice";
+
+const voiceOptions: Array<{ value: LegacyOsVoiceMode; label: string; description: string }> = [
+  {
+    value: "elara_direct",
+    label: "Elara, by name",
+    description: "Elara speaks by default, and switches to addressing you directly by name when it matters.",
+  },
+  {
+    value: "elara",
+    label: "Always Elara",
+    description: "Elara keeps her own voice throughout, distinct from yours.",
+  },
+  {
+    value: "client",
+    label: "Speak to me directly",
+    description: "Skip the persona. The assistant talks to you in plain second-person language.",
+  },
+];
 
 export default function ProfileShell({ onboarding }: { onboarding: boolean }) {
   const [userEmail, setUserEmail] = useState("");
@@ -10,6 +29,9 @@ export default function ProfileShell({ onboarding }: { onboarding: boolean }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showTour, setShowTour] = useState(onboarding);
+  const [voiceMode, setVoiceMode] = useState<LegacyOsVoiceMode>("elara_direct");
+  const [savingVoice, setSavingVoice] = useState(false);
+  const [voiceSaved, setVoiceSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -23,6 +45,8 @@ export default function ProfileShell({ onboarding }: { onboarding: boolean }) {
       }
       setUserEmail(data.user.email ?? "");
       setName((data.user.user_metadata?.full_name as string | undefined) ?? "");
+      const storedVoiceMode = data.user.user_metadata?.elara_voice_mode;
+      if (isLegacyOsVoiceMode(storedVoiceMode)) setVoiceMode(storedVoiceMode);
       if (sessionStorage.getItem("legacyos.orientation.complete") === "1") {
         setShowTour(false);
       }
@@ -39,6 +63,19 @@ export default function ProfileShell({ onboarding }: { onboarding: boolean }) {
     const { error } = await supabase.auth.updateUser({ data: { full_name: name.trim() } });
     setSaving(false);
     setSaved(!error);
+  }
+
+  async function changeVoiceMode(nextMode: LegacyOsVoiceMode) {
+    setVoiceMode(nextMode);
+    setVoiceSaved(false);
+    setSavingVoice(true);
+    const supabase = getSupabaseBrowserClient();
+    const { error } = await supabase.auth.updateUser({ data: { elara_voice_mode: nextMode } });
+    setSavingVoice(false);
+    if (!error) {
+      setVoiceSaved(true);
+      window.setTimeout(() => setVoiceSaved(false), 1800);
+    }
   }
 
   function completeOrientation() {
@@ -64,6 +101,33 @@ export default function ProfileShell({ onboarding }: { onboarding: boolean }) {
                 <button disabled={saving} className="mt-6 rounded-lg bg-[#b98a25] px-5 py-3 font-semibold text-black">{saving ? "Saving…" : "Save profile"}</button>
                 {saved && <span className="ml-3 text-sm text-emerald-300">Saved</span>}
               </form>
+
+              <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6">
+                <p className="text-xs uppercase tracking-[0.25em] text-[#e7b84b]">Voice</p>
+                <h2 className="mt-2 text-xl font-semibold">How Legacy OS talks to you</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">Choose how the assistant addresses you when you ask it something. You can change this any time.</p>
+                <fieldset className="mt-6 space-y-3">
+                  <legend className="sr-only">Conversation voice</legend>
+                  {voiceOptions.map((option) => (
+                    <label key={option.value} className="flex cursor-pointer gap-3 rounded-xl border border-white/10 bg-black/20 p-4 hover:border-[#e7b84b]/30">
+                      <input
+                        type="radio"
+                        name="voice-mode"
+                        value={option.value}
+                        checked={voiceMode === option.value}
+                        disabled={savingVoice}
+                        onChange={() => void changeVoiceMode(option.value)}
+                        className="mt-1 accent-[#b98a25]"
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold text-white">{option.label}</span>
+                        <span className="mt-1 block text-sm leading-5 text-white/45">{option.description}</span>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+                {voiceSaved && <p className="mt-3 text-sm text-emerald-300">Saved</p>}
+              </section>
             </div>
 
             <aside className="rounded-2xl border border-[#e7b84b]/25 bg-[#100d07] p-6">

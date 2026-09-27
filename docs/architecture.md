@@ -23,6 +23,8 @@ LegacyOS uses OpenAI in two places, both real and both gated behind authenticati
 
 Both treat stored memories and continuity state as untrusted data, never as instructions, when they're passed to the model.
 
+`/api/recall/recreation` also pulls in real, free, keyless context (right now: historical weather via Open-Meteo) when a memory has a place and a date, so a reconstructed answer can lean on real fact instead of invented detail. That lookup is in `lib/context-enrichment.ts`, fails soft on any error, and is disclosed to the person separately from the evidence it drew from.
+
 ## Infrastructure
 
 - Supabase for auth, database, and row-level security.

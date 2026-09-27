@@ -23,6 +23,7 @@ function mapRow(row: Record<string, unknown>): RecallMemoryRecord {
     title: String(row.title),
     narrative: String(row.narrative),
     occurredAt: typeof row.occurred_at === "string" ? row.occurred_at : undefined,
+    location: typeof row.location === "string" ? row.location : undefined,
     people: Array.isArray(row.people) ? row.people.filter((v): v is string => typeof v === "string") : [],
     sourceRefs: Array.isArray(row.source_refs) ? row.source_refs.filter((v): v is string => typeof v === "string") : [],
     evidenceClass: row.evidence_class as RecallMemoryRecord["evidenceClass"],
@@ -44,6 +45,7 @@ export async function saveRecallMemory(memory: RecallMemoryRecord, userId?: stri
         title: memory.title,
         narrative: memory.narrative,
         occurred_at: memory.occurredAt ?? null,
+        location: memory.location ?? null,
         people: memory.people ?? [],
         source_refs: memory.sourceRefs ?? [],
         evidence_class: memory.evidenceClass,
@@ -137,6 +139,7 @@ export async function updateRecallMemory(id: string, updates: Record<string, unk
     if (typeof updates.title === "string") payload.title = updates.title;
     if (typeof updates.narrative === "string") payload.narrative = updates.narrative;
     if (typeof updates.occurredAt === "string" || updates.occurredAt === null) payload.occurred_at = updates.occurredAt;
+    if (typeof updates.location === "string" || updates.location === null) payload.location = updates.location;
     if (Array.isArray(updates.people)) payload.people = updates.people;
     if (Array.isArray(updates.sourceRefs)) payload.source_refs = updates.sourceRefs;
     if (typeof updates.evidenceClass === "string") payload.evidence_class = updates.evidenceClass;

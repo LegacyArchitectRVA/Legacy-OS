@@ -23,7 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 }); }
   if (body.evidenceClass !== undefined && !isEvidenceClass(body.evidenceClass)) return NextResponse.json({ error: "Invalid evidenceClass." }, { status: 400 });
   if (body.confidence !== undefined && body.confidence !== null && (typeof body.confidence !== "number" || body.confidence < 0 || body.confidence > 1)) return NextResponse.json({ error: "confidence must be between 0 and 1." }, { status: 400 });
-  const allowed = ["title", "narrative", "occurredAt", "people", "sourceRefs", "evidenceClass", "confidence", "provenanceComplete"];
+  const allowed = ["title", "narrative", "occurredAt", "location", "people", "sourceRefs", "evidenceClass", "confidence", "provenanceComplete"];
   const updates = Object.fromEntries(Object.entries(body).filter(([key]) => allowed.includes(key)));
   if (Object.keys(updates).length === 0) return NextResponse.json({ error: "No editable fields supplied." }, { status: 400 });
   try {
