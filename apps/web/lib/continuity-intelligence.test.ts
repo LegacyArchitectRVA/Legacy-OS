@@ -5,12 +5,12 @@ import type { RecallMemoryRecord } from "./recall";
 
 const pillars: ContinuityPillarCoverage[] = [
   { pillarKey: "digital_life", name: "Digital Life", coverageScore: 20, status: "needs_attention", matchedMemories: 0 },
+  { pillarKey: "emergency_successor_access", name: "Emergency & Successor Access", coverageScore: 65, status: "in_progress", matchedMemories: 2 },
   { pillarKey: "financial_assets", name: "Financial & Assets", coverageScore: 80, status: "ready", matchedMemories: 3 },
-  { pillarKey: "household_property", name: "Household & Property", coverageScore: 60, status: "in_progress", matchedMemories: 1 },
-  { pillarKey: "health_medical", name: "Health & Medical", coverageScore: 70, status: "in_progress", matchedMemories: 2 },
+  { pillarKey: "household_operations", name: "Household Operations", coverageScore: 60, status: "in_progress", matchedMemories: 1 },
   { pillarKey: "vital_records", name: "Vital Records", coverageScore: 50, status: "in_progress", matchedMemories: 1 },
-  { pillarKey: "business_continuity", name: "Business Continuity", coverageScore: 90, status: "ready", matchedMemories: 4 },
   { pillarKey: "legacy_wishes", name: "Legacy & Wishes", coverageScore: 75, status: "ready", matchedMemories: 2 },
+  { pillarKey: "business_continuity", name: "Business Continuity", coverageScore: 90, status: "ready", matchedMemories: 4 },
 ];
 
 function memory(overrides: Partial<RecallMemoryRecord> = {}): RecallMemoryRecord {

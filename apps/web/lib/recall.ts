@@ -9,6 +9,7 @@ export interface RecallMemoryInput {
   title: string;
   narrative: string;
   occurredAt?: string;
+  location?: string;
   people?: string[];
   sourceRefs?: string[];
   evidenceClass: EvidenceClass;
@@ -33,6 +34,7 @@ export function normalizeRecallMemory(input: RecallMemoryInput): RecallMemoryRec
   const sourceRefs = input.sourceRefs?.map((value) => value.trim()).filter(Boolean) ?? [];
   const people = input.people?.map((value) => value.trim()).filter(Boolean) ?? [];
   const confidence = input.confidence === undefined ? undefined : Math.min(1, Math.max(0, input.confidence));
+  const location = input.location?.trim() || undefined;
 
   return {
     ...input,
@@ -41,6 +43,7 @@ export function normalizeRecallMemory(input: RecallMemoryInput): RecallMemoryRec
     people,
     sourceRefs,
     confidence,
+    location,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     provenanceComplete: sourceRefs.length > 0 && input.evidenceClass !== "unknown",

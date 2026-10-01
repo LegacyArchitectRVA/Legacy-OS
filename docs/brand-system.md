@@ -5,7 +5,7 @@
 LegacyOS is the operational continuity system behind the philosophy of "Order in Your Absence."
 
 The brand should feel like:
-- A trusted advisor
+- A private continuity office
 - A private executive office
 - A heritage institution
 - A premium continuity solution
@@ -49,17 +49,11 @@ Icons should be:
 
 ## Product Icons
 
-Business Brain:
-Knowledge archive + compass
-
-Executive Advisor:
-Strategy + shield
-
-Production Assistant:
-Workflow + precision clock
-
 Continuity Vault:
 Protected archive + key/shield
+
+Legacy Recall:
+Archive + compass
 
 Legacy Score:
 Readiness compass

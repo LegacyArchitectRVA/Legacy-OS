@@ -2,7 +2,6 @@ import Link from "next/link";
 import ClipRecorder from "../components/ClipRecorder";
 
 export default function Dashboard() {
-  const modules = ["Business Brain", "Continuity Vault", "Executive Advisor", "Production Assistant", "Legacy Score"];
   return (
     <main className="p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -13,7 +12,6 @@ export default function Dashboard() {
         <Link href="/os" className="rounded-md border px-4 py-2 text-sm font-semibold transition hover:bg-muted">Open Command Center</Link>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {modules.map((module) => <div key={module} className="rounded border p-6">{module}</div>)}
         <Link href="/dashboard/recall" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Legacy Recall</div><p className="mt-2 text-sm text-muted-foreground">Find memories, evidence, and provenance behind your continuity record.</p></Link>
         <Link href="/dashboard/continuity" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Continuity Readiness</div><p className="mt-2 text-sm text-muted-foreground">See coverage, readiness, and continuity gaps.</p></Link>
         <Link href="/dashboard/visual-recreation" className="rounded border p-6 transition hover:bg-muted"><div className="font-semibold">Visual Recreation</div><p className="mt-2 text-sm text-muted-foreground">Explore reconstructed people, business, digital systems, assets, and timeline.</p></Link>

@@ -1,30 +1,24 @@
 # LegacyOS
 
-## Continuity for Life, Family, and Business
+## Continuity for life, family, and business
 
-LegacyOS is an AI-powered continuity operating system designed to preserve the knowledge, memories, relationships, assets, responsibilities, systems, and decisions that matter to a person, family, or business.
+LegacyOS is the software behind Legacy Architect RVA's Life Manual. It helps preserve the knowledge, memories, relationships, assets, responsibilities, systems, and decisions that matter to a person, a family, or a business, so none of it disappears just because someone becomes unavailable, circumstances change, or time passes.
 
-The mission is simple: important parts of a life or organization should not disappear simply because someone becomes unavailable, circumstances change, or time passes.
+LegacyOS runs in three contexts. The same continuity infrastructure helps someone organize their own life, helps a family preserve and navigate what matters, or helps a business keep running when key people are unavailable.
 
-LegacyOS can operate in personal, family, and business contexts. The same underlying continuity infrastructure can help someone organize their own life, help a family preserve and navigate what matters, or help a business continue operating when key people are unavailable.
+## Core layers
 
-## Core Layers
-
-- Knowledge Brain: personal, family, and business knowledge, documents, procedures, and operational memory
-- Decision Advisor: decision analysis, risk evaluation, and assumption testing
-- Continuity Vault: critical personal, family, and business information and readiness
-- Legacy Recall: the human memory layer for stories, relationships, voice, images, video, and evidence-grounded memory experiences
-- Legacy Score: measuring continuity and readiness
+- **Continuity Vault**: the critical personal, family, and business information that makes up a continuity record, and how ready that record is.
+- **Legacy Recall**: the human memory layer for stories, relationships, voice, images, video, and evidence-grounded memory experiences.
+- **Legacy Score**: a measure of continuity and readiness across the record.
 
 ## Legacy Recall
 
-Legacy Recall is the human memory layer of LegacyOS. It is designed to preserve meaningful stories, memories, relationships, voice, visual history, and personal context while people are alive, then make that material discoverable to authorized people later.
+Legacy Recall is the human memory layer of LegacyOS. It preserves meaningful stories, memories, relationships, voice, visual history, and personal context while people are alive, then makes that material discoverable to authorized people later.
 
-Recall is evidence-grounded. It distinguishes documented information from reconstruction, inference, and unknown information, and it never presents an AI reconstruction as the actual person.
+Recall is evidence-grounded. It distinguishes documented information from reconstruction and inference, and it never presents an AI answer as the actual person. Every recalled memory carries a disclosure and the evidence it drew from, so the people using it later know exactly what's confirmed and what's a best guess.
 
-The system can connect photographs, video, recordings, messages, journals, documents, locations, dates, and other authorized sources into searchable memory experiences while preserving provenance and access controls.
-
-## Continuity by Context
+## Continuity by context
 
 ### Personal
 
@@ -36,9 +30,9 @@ Preserve shared knowledge, family history, important instructions, memories, rel
 
 ### Business
 
-Preserve knowledge, SOPs, workflows, systems, responsibilities, decisions, and operational dependencies so the organization can continue when leadership or key personnel are unavailable.
+Preserve knowledge, procedures, workflows, responsibilities, and operational dependencies so the business can keep running when leadership or key people are unavailable.
 
-## Technology Stack
+## Technology stack
 
 ### Frontend
 - Next.js
@@ -49,35 +43,26 @@ Preserve knowledge, SOPs, workflows, systems, responsibilities, decisions, and o
 ### Backend
 - Supabase
 - PostgreSQL
-- API services
 
-### AI Layer
-- OpenAI models
-- Retrieval augmented generation (RAG)
-- AI agents
-- Knowledge embeddings
-- Evidence and provenance-aware retrieval
+### AI layer
+- OpenAI, for Legacy Recall's memory answers and the chat assistant, gated behind authentication and treated as untrusted input for anything it's shown
 
 ### Infrastructure
-- Vercel for deployment
-- Cloudflare for security, storage, and edge infrastructure
+- Cloudflare
 - GitHub for source control
 
-### Automation
-- n8n workflows
-- CRM and system integrations
-- Email and notification systems
+## Product philosophy
 
-## Product Philosophy
+LegacyOS runs on the same continuity philosophy as Legacy Architect RVA's Life Manual:
 
-LegacyOS applies the same continuity philosophy as Legacy Architect RVA's Life Manual:
+**What matters should stay understandable, discoverable, and usable when someone important is unavailable.**
 
-**What matters should remain understandable, discoverable, and usable when someone important is unavailable.**
+LegacyOS isn't only a business continuity system and it isn't only a memory product. It's continuity infrastructure for the parts of life and work people don't want lost.
 
-LegacyOS is not only a business continuity system and not only a memory product. It is continuity infrastructure for the parts of life and work that people do not want lost.
+LegacyOS organizes information. It doesn't replace legal, financial, medical, or other licensed professional advice.
 
 ## Status
 
 Foundation phase.
 
-CI validation: lint, typecheck, tests, and production build are required on every main-branch change.
+CI validation (lint, typecheck, tests, and production build) runs on every change to main.

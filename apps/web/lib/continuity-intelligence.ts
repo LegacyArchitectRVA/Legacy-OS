@@ -30,12 +30,12 @@ const EVIDENCE_STRENGTH: Record<RecallMemoryRecord["evidenceClass"], number> = {
 
 const PILLAR_LABELS: Record<ContinuityPillarKey, string> = {
   digital_life: "Digital Life",
+  emergency_successor_access: "Emergency & Successor Access",
   financial_assets: "Financial & Assets",
-  household_property: "Household & Property",
-  health_medical: "Health & Medical",
+  household_operations: "Household Operations",
   vital_records: "Vital Records",
-  business_continuity: "Business Continuity",
   legacy_wishes: "Legacy & Wishes",
+  business_continuity: "Business Continuity",
 };
 
 function clamp(value: number) {

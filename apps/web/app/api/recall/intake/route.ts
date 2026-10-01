@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   if (!isEvidenceClass(body.evidenceClass)) return NextResponse.json({ error: "evidenceClass must be known, reconstructed, inferred, or unknown." }, { status: 400 });
   if (body.confidence !== undefined && (typeof body.confidence !== "number" || !Number.isFinite(body.confidence))) return NextResponse.json({ error: "confidence must be a finite number between 0 and 1." }, { status: 400 });
   if (body.people !== undefined && (!Array.isArray(body.people) || body.people.some((value) => typeof value !== "string"))) return NextResponse.json({ error: "people must be an array of strings." }, { status: 400 });
+  if (body.location !== undefined && typeof body.location !== "string") return NextResponse.json({ error: "location must be a string." }, { status: 400 });
   if (body.sourceRefs !== undefined && (!Array.isArray(body.sourceRefs) || body.sourceRefs.some((value) => typeof value !== "string"))) return NextResponse.json({ error: "sourceRefs must be an array of strings." }, { status: 400 });
 
   const userId = await getRecallUserId();

@@ -9,8 +9,8 @@ type Device = { id: string; name: string; platform: string; status: string; last
 type Source = { id: string; name: string; source_type: string; provider: string | null; status: string; last_sync_at: string | null };
 
 const PILLARS = [
-  ["digital_life", "Digital Life"], ["financial_assets", "Financial & Assets"], ["household_property", "Household & Property"],
-  ["health_medical", "Health & Medical"], ["vital_records", "Vital Records"], ["business_continuity", "Business Continuity"], ["legacy_wishes", "Legacy & Wishes"],
+  ["digital_life", "Digital Life"], ["emergency_successor_access", "Emergency & Successor Access"], ["financial_assets", "Financial & Assets"],
+  ["household_operations", "Household Operations"], ["vital_records", "Vital Records"], ["legacy_wishes", "Legacy & Wishes"], ["business_continuity", "Business Continuity"],
 ] as const;
 
 const links = [["/os", "Overview"], ["/dashboard/continuity", "Continuity"], ["/dashboard/recall", "Recall"], ["/dashboard/successor", "Successor"], ["/profile", "Profile"]];
@@ -88,7 +88,7 @@ export default function LegacyOsPage() {
             </div></article>
           </section>
 
-          <section className="mt-8 rounded-2xl border border-[#e7b84b]/20 bg-[#100d07] p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Next actions</p><h2 className="mt-2 font-serif text-3xl">Move from information to action.</h2><div className="mt-6 grid gap-3 sm:grid-cols-3"><Link href="/dashboard/recall" className="rounded-xl border border-white/10 bg-black/20 p-4"><span className="block text-sm font-semibold">Search Recall</span><span className="mt-1 block text-xs leading-5 text-white/40">Find evidence and provenance behind the record.</span></Link><Link href="/dashboard/successor" className="rounded-xl border border-white/10 bg-black/20 p-4"><span className="block text-sm font-semibold">Open Successor Mode</span><span className="mt-1 block text-xs leading-5 text-white/40">See actions, unknowns, and evidence warnings.</span></Link><Link href="/profile" className="rounded-xl border border-white/10 bg-black/20 p-4"><span className="block text-sm font-semibold">Security & profile</span><span className="mt-1 block text-xs leading-5 text-white/40">Manage identity and Elara preferences.</span></Link></div></section>
+          <section className="mt-8 rounded-2xl border border-[#e7b84b]/20 bg-[#100d07] p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.2em] text-[#e7b84b]">Next actions</p><h2 className="mt-2 font-serif text-3xl">Move from information to action.</h2><div className="mt-6 grid gap-3 sm:grid-cols-3"><Link href="/dashboard/recall" className="rounded-xl border border-white/10 bg-black/20 p-4"><span className="block text-sm font-semibold">Search Recall</span><span className="mt-1 block text-xs leading-5 text-white/40">Find evidence and provenance behind the record.</span></Link><Link href="/dashboard/successor" className="rounded-xl border border-white/10 bg-black/20 p-4"><span className="block text-sm font-semibold">Open Successor Mode</span><span className="mt-1 block text-xs leading-5 text-white/40">See actions, unknowns, and evidence warnings.</span></Link><Link href="/profile" className="rounded-xl border border-white/10 bg-black/20 p-4"><span className="block text-sm font-semibold">Security & profile</span><span className="mt-1 block text-xs leading-5 text-white/40">Manage identity and account settings.</span></Link></div></section>
         </>}
       </div>
 

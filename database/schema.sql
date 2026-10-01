@@ -1,6 +1,6 @@
 -- LegacyOS Workspace Foundation
 -- Canonical operational memory data model.
--- Runtime migrations live under database/migrations.
+-- Runtime migrations live under supabase/migrations; database/migrations is retained as a historical record.
 
 create extension if not exists "uuid-ossp";
 

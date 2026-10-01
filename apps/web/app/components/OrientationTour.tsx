@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 const steps = [
-  { title: "Welcome to Legacy OS", body: "I'm Elara. I'll help you understand your continuity picture and show you where everything lives." },
-  { title: "Your Profile", body: "This is your starting point. Confirm your name and basic context first, then we'll build outward." },
-  { title: "The Seven Pillars", body: "Your life is organized across seven continuity areas, each with its own information, gaps, records, and next actions." },
-  { title: "Your Life Map", body: "The visual Life Map lets you explore those pillars as a connected system instead of a pile of disconnected files." },
-  { title: "Elara is here", body: "Ask me questions, tell me what changed, or let me guide you to the next thing that matters." },
+  { title: "Welcome to Legacy OS", body: "This is where your Life Manual actually lives. Give it a few minutes and we'll show you where everything goes." },
+  { title: "Your Profile", body: "Confirm your name and the basics first. Everything else builds outward from here." },
+  { title: "Seven Chapters", body: "Your record is organized into the same seven chapters as your Life Manual, each with its own information, gaps, and next actions." },
+  { title: "Continuity Readiness", body: "See what's covered and what's still open at a glance, so you always know what's left to do." },
+  { title: "You're set", body: "Add evidence as you go, and Legacy Recall will keep track of what's confirmed versus what's still a guess." },
 ];
 
 type OrientationTourProps = { onComplete?: () => void };
@@ -29,9 +29,9 @@ export default function OrientationTour({ onComplete }: OrientationTourProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl border border-[#e7b84b]/40 bg-[#0b0b0b] p-7 shadow-2xl">
         <div className="flex items-start gap-4">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#e7b84b]/50 bg-[#171208] text-xl text-[#f0c85a]">E</div>
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#e7b84b]/50 bg-[#171208] text-xl text-[#f0c85a]">L</div>
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#e7b84b]">Elara · Legacy OS Guide</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#e7b84b]">Legacy OS</p>
             <h2 className="mt-2 font-serif text-2xl">{current.title}</h2>
           </div>
         </div>

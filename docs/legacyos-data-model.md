@@ -1,44 +1,81 @@
 # LegacyOS Data Model
 
-## Organization
-Represents a business workspace.
+This reflects the live schema in `database/schema.sql`. Runtime migrations live under `supabase/migrations`; `database/migrations` is kept as a historical record.
+
+## Workspace
+Represents a personal, family, or business workspace.
 
 Fields:
 - id
 - name
+- owner_id
 - industry
 - created_at
 
-## Knowledge Item
-Represents business memory.
+## Workspace Member
+Represents a person's access to a workspace.
 
 Fields:
 - id
-- organization_id
+- workspace_id
+- user_id
+- role (owner, admin, member)
+- created_at
+
+## Business Profile
+Represents the mission, operating principles, and brand voice tied to a workspace.
+
+Fields:
+- id
+- workspace_id
+- mission
+- operating_principles
+- brand_voice
+- created_at
+
+## Knowledge Document
+Represents preserved knowledge tied to a workspace.
+
+Fields:
+- id
+- workspace_id
 - title
 - category
-- source
+- source_type
+- content
+- embedding_reference
 - version
-- approval_status
+- created_at
 
-## Continuity Record
-Represents critical operational information.
+## SOP
+Represents a documented process tied to a workspace.
 
 Fields:
 - id
-- organization_id
-- pillar
-- description
+- workspace_id
+- process_name
+- department
+- steps
 - owner
-- status
+- risk_level
+- updated_at
 
-## Decision Record
-Represents Executive Advisor analysis.
+## AI Memory
+Represents memory content generated or retrieved for a workspace.
 
 Fields:
 - id
-- organization_id
-- decision
-- assumptions
-- risks
-- recommendation
+- workspace_id
+- memory_type
+- memory_content
+- created_at
+
+## Activity Log
+Represents an auditable action tied to a workspace.
+
+Fields:
+- id
+- workspace_id
+- action
+- metadata
+- created_at
