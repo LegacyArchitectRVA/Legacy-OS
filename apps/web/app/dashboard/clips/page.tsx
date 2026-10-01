@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic";
 type ClipKind = "audio" | "video";
 type PillarKey =
   | "digital_life"
+  | "emergency_successor_access"
   | "financial_assets"
-  | "household_property"
-  | "health_medical"
+  | "household_operations"
   | "vital_records"
-  | "business_continuity"
-  | "legacy_wishes";
+  | "legacy_wishes"
+  | "business_continuity";
 
 type Clip = {
   id: string;
@@ -50,12 +50,12 @@ type ClipTable = {
 
 const PILLARS: Array<{ key: PillarKey; label: string }> = [
   { key: "digital_life", label: "Digital Life" },
+  { key: "emergency_successor_access", label: "Emergency & Successor Access" },
   { key: "financial_assets", label: "Financial & Assets" },
-  { key: "household_property", label: "Household & Property" },
-  { key: "health_medical", label: "Health & Medical" },
+  { key: "household_operations", label: "Household Operations" },
   { key: "vital_records", label: "Vital Records" },
-  { key: "business_continuity", label: "Business Continuity" },
   { key: "legacy_wishes", label: "Legacy & Wishes" },
+  { key: "business_continuity", label: "Business Continuity" },
 ];
 
 function formatDuration(seconds: number | null) {

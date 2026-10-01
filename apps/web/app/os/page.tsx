@@ -9,8 +9,8 @@ type Device = { id: string; name: string; platform: string; status: string; last
 type Source = { id: string; name: string; source_type: string; provider: string | null; status: string; last_sync_at: string | null };
 
 const PILLARS = [
-  ["digital_life", "Digital Life"], ["financial_assets", "Financial & Assets"], ["household_property", "Household & Property"],
-  ["health_medical", "Health & Medical"], ["vital_records", "Vital Records"], ["business_continuity", "Business Continuity"], ["legacy_wishes", "Legacy & Wishes"],
+  ["digital_life", "Digital Life"], ["emergency_successor_access", "Emergency & Successor Access"], ["financial_assets", "Financial & Assets"],
+  ["household_operations", "Household Operations"], ["vital_records", "Vital Records"], ["legacy_wishes", "Legacy & Wishes"], ["business_continuity", "Business Continuity"],
 ] as const;
 
 const links = [["/os", "Overview"], ["/dashboard/continuity", "Continuity"], ["/dashboard/recall", "Recall"], ["/dashboard/successor", "Successor"], ["/profile", "Profile"]];
