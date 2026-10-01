@@ -64,7 +64,7 @@ select is((select count(*)::integer from public.workspaces), 1, 'owner can selec
 select lives_ok($$insert into public.workspaces (id,name,owner_id) values ('10000000-0000-0000-0000-000000000002','Created','00000000-0000-0000-0000-000000000001')$$, 'owner can insert workspace');
 select lives_ok($$update public.workspaces set name='Updated' where id='10000000-0000-0000-0000-000000000001'$$, 'owner can update workspace');
 select lives_ok($$delete from public.workspaces where id='10000000-0000-0000-0000-000000000002'$$, 'owner can delete workspace');
-select throws_ok($$update public.workspaces set owner_id='00000000-0000-0000-0000-000000000002' where id='10000000-0000-0000-0000-000000000001'$$, '42501', null, 'owner cannot transfer ownership');
+select throws_ok($$update public.workspaces set owner_id='00000000-0000-0000-0000-000000000002' where id='10000000-0000-0000-0000-000000000001'$$, 'P0001', 'Workspace ownership transfer requires the dedicated ownership workflow', 'owner cannot transfer ownership');
 select lives_ok($$insert into public.workspace_members (workspace_id,user_id,role) values ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003','member')$$, 'owner can insert membership');
 select lives_ok($$update public.workspace_members set role='admin' where workspace_id='10000000-0000-0000-0000-000000000001' and user_id='00000000-0000-0000-0000-000000000003'$$, 'owner can update membership');
 select lives_ok($$delete from public.workspace_members where workspace_id='10000000-0000-0000-0000-000000000001' and user_id='00000000-0000-0000-0000-000000000003'$$, 'owner can delete membership');
